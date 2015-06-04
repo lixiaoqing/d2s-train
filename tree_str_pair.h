@@ -11,8 +11,8 @@ struct SyntaxNode
 	string label;                                   // 该节点的句法标签或者词
 	int father;
 	vector<int> children;
-	Span src_span;                         // 该节点对应的源端span,用首位两个单词的位置表示
-	Span tgt_span;                         // 该节点对应的目标端span
+	Span src_span;                         			// 该节点对应的源端span,用起始位置和跨度长度表示
+	Span tgt_span;                         			// 该节点对应的目标端span
 	set<string> str_rules;							// 该节点所有规则的字符串形式
 	bool lex_align_consistent;						// 该节点单词是否满足对齐一致性
 	bool substree_align_consistent;					// 该节点对应的子树是否满足对齐一致性

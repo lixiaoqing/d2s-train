@@ -175,8 +175,9 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_pos)
 	}
 	auto &first_child = src_nodes.at(node.children.front());
 	auto &last_child = src_nodes.at(node.children.back());
-	node.src_span = make_pair(first_child.src_span.first,last_child.src_span.first+last_child.src_span.second-first_child.src_span.first);
-	node.tgt_span = tgt_span_to_src_span[node.src_span.first][node.src_span.second];
+	node.src_span = merge_span(make_pair(first_child.src_span.first,last_child.src_span.first+last_child.src_span.second
+								-first_child.src_span.first),make_pair(sub_root_pos,0));
+	node.tgt_span = src_span_to_tgt_span[node.src_span.first][node.src_span.second];
 	if (src_span_to_alignment_agreement_flag[node.src_span.first][node.src_span.second] == true)
 	{
 		node.lex_align_consistent = true;
