@@ -7,7 +7,8 @@ typedef pair<int,int> Span;			//由起始位置和span长度表示（span长度�
 // 源端句法树节点
 struct SyntaxNode
 {
-	string label;                                   // 该节点的句法标签或者词
+	string word;                                    // 该节点的词
+	string tag;                                     // 该节点的词性
 	int idx;										// 该节点在句子中的位置
 	int father;										// 该节点的父节点在句子中的位置
 	vector<int> children;							// 该节点的孩子节点在句子中的位置
@@ -28,6 +29,15 @@ struct SyntaxNode
 	}
 };
 
+struct RuleSrcUnit
+{
+	int type;
+	string word;
+	string tag;
+	Span tgt_span;
+	double lex_weight;
+};
+
 class TreeStrPair
 {
 	public:
@@ -45,6 +55,8 @@ class TreeStrPair
 		void extract_head_rule(SyntaxNode &node);
 		void extract_head_mod_rule(SyntaxNode &node);
 		vector<Span> expand_tgt_span(Span tgt_span,Span bound);
+		void generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> &rule_src,Span expanded_tgt_span,string &config);
+		bool is_config_valid(vector<RuleSrcUnit> &rule_src,string &config);
 
 	public:
 		int root_idx;
@@ -57,6 +69,7 @@ class TreeStrPair
 		vector<string> tgt_words;
 		int src_sen_len;
 		int tgt_sen_len;
+		set<string> open_tags;
 };
 
 #endif

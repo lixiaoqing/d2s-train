@@ -2,8 +2,9 @@
 
 TreeStrPair::TreeStrPair(string &line_tree,string &line_str,string &line_align)
 {
-	vector<string> word_hidx_vec = Split(line_tree);
-	src_sen_len = word_hidx_vec.size();
+	open_tags = {"CD","OD","DT","JJ","NN","NR","NT","AD","FW","PN"};
+	vector<string> wt_hidx_vec = Split(line_tree);
+	src_sen_len = wt_hidx_vec.size();
 	src_nodes.resize(src_sen_len);
 	src_idx_to_tgt_idx.resize(src_sen_len);
 	src_span_to_tgt_span.resize(src_sen_len);
@@ -13,7 +14,7 @@ TreeStrPair::TreeStrPair(string &line_tree,string &line_str,string &line_align)
 		src_span_to_tgt_span.at(beg).resize(src_sen_len-beg,make_pair(-1,-1));
 		src_span_to_alignment_agreement_flag.at(beg).resize(src_sen_len-beg,false);
 	}
-	build_tree_from_str(word_hidx_vec);
+	build_tree_from_str(wt_hidx_vec);
 	tgt_words = Split(line_str);
 	tgt_sen_len = tgt_words.size();
 	tgt_idx_to_src_idx.resize(tgt_sen_len);
@@ -122,15 +123,19 @@ void TreeStrPair::check_alignment_agreement()
  3. 出口参数: 无
  4. 算法简介: 见注释
 ************************************************************************************* */
-void TreeStrPair::build_tree_from_str(const vector<string> &word_hidx_vec)
+void TreeStrPair::build_tree_from_str(const vector<string> &wt_hidx_vec)
 {
 	for (int i=0;i<src_sen_len;i++)
 	{
-		const string &word_hidx = word_hidx_vec.at(i);
-		int sep = word_hidx.rfind('_');
-		string word = word_hidx.substr(0,sep);
-		int hidx = stoi(word_hidx.substr(sep+1));
-		src_nodes.at(i).label = word;
+		const string &wt_hidx = wt_hidx_vec.at(i);
+		int sep = wt_hidx.rfind('_');
+		string wt = wt_hidx.substr(0,sep);
+		int hidx = stoi(wt_hidx.substr(sep+1));
+		sep = wt.rfind('_');
+		string word = wt.substr(0,sep);
+		string tag = wt.substr(sep+1);
+		src_nodes.at(i).word = word;
+		src_nodes.at(i).tag = tag;
 		src_nodes.at(i).idx = i;
 		src_nodes.at(i).father = hidx;
 		if (hidx == -1)
@@ -166,7 +171,7 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 			node.lex_align_consistent = true;
 			node.substree_align_consistent = true;
 		}
-		//cout<<node.label<<' '<<src_nodes.at(node.father).label<<' '<<node.src_span.first<<' '<<node.src_span.second<<' ';
+		//cout<<node.word<<' '<<src_nodes.at(node.father).word<<' '<<node.src_span.first<<' '<<node.src_span.second<<' ';
 		//cout<<node.tgt_span.first<<' '<<node.tgt_span.second<<' '<<node.lex_align_consistent<<' '<<node.substree_align_consistent<<'\n';
 		return;
 	}
@@ -187,7 +192,7 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 	{
 		node.substree_align_consistent = true;
 	}
-	//cout<<node.label<<' '<<src_nodes.at(node.father).label<<' '<<node.src_span.first<<' '<<node.src_span.second<<' ';
+	//cout<<node.word<<' '<<src_nodes.at(node.father).word<<' '<<node.src_span.first<<' '<<node.src_span.second<<' ';
 	//cout<<node.tgt_span.first<<' '<<node.tgt_span.second<<' '<<node.lex_align_consistent<<' '<<node.substree_align_consistent<<'\n';
 }
 
@@ -221,7 +226,7 @@ void TreeStrPair::extract_rules(int sub_root_idx)
 		{
 			if (src_nodes.at(child_idx).substree_align_consistent == false)
 			{
-				flag == false;
+				flag = false;
 				break;
 			}
 		}
@@ -234,7 +239,7 @@ void TreeStrPair::extract_rules(int sub_root_idx)
 
 void TreeStrPair::extract_head_rule(SyntaxNode &node)
 {
-	string rule_src = node.label;
+	string rule_src = node.word;
 	vector<Span> expanded_tgt_spans = expand_tgt_span(src_span_to_tgt_span[node.idx][0],make_pair(0,tgt_sen_len-1));
 	for (auto expanded_tgt_span : expanded_tgt_spans)
 	{
@@ -249,53 +254,133 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 
 void TreeStrPair::extract_head_mod_rule(SyntaxNode &node)
 {
-	string rule_src;
-	int variable_num = 0;
-	vector<int> tgt_replacement_status(tgt_sen_len,-1);
+	vector<RuleSrcUnit> rule_src;
 	for (auto child_idx : node.children)
 	{
 		auto &child = src_nodes.at(child_idx);
 		if (child.children.empty())
 		{
-			rule_src += child.label + " ";
+			RuleSrcUnit unit = {2,child.word,child.tag,child.tgt_span,0};
+			rule_src.push_back(unit);
 		}
 		else
 		{
-			rule_src += "x"+to_string(variable_num)+":"+child.label+" ";
-			for (int i=child.tgt_span.first;i<=child.tgt_span.first+child.tgt_span.second;i++)
+			RuleSrcUnit unit = {1,child.word,child.tag,child.tgt_span,0};
+			rule_src.push_back(unit);
+		}
+	}
+	RuleSrcUnit unit = {0,node.word,node.tag,src_span_to_tgt_span[node.idx][0],0};
+	rule_src.push_back(unit);
+
+	vector<Span> expanded_tgt_spans = expand_tgt_span(node.tgt_span,make_pair(0,tgt_sen_len-1));
+	for (auto expanded_tgt_span : expanded_tgt_spans)
+	{
+		vector<string> configs = {"lll","llg","lgl","gll","lgg","glg","ggl","ggg"};
+		for (string &config : configs)
+		{
+			generalize_head_mod_rule(node,rule_src,expanded_tgt_span,config);
+		}
+	}
+}
+
+void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> &rule_src,Span expanded_tgt_span,string &config)
+{
+	if (is_config_valid(rule_src,config) == false)
+		return;
+	string rule_src_str,rule_tgt_str;
+	int variable_num = 0;
+	vector<int> tgt_replacement_status(tgt_sen_len,-1);
+	for (auto &unit : rule_src)
+	{
+		if (unit.type == 2)
+		{
+			if (config[2] == 'g' && open_tags.find(unit.tag) != open_tags.end() )
+			{
+				rule_src_str += "x"+to_string(variable_num)+":"+unit.tag+" ";
+				for (int i=unit.tgt_span.first;i<=unit.tgt_span.first+unit.tgt_span.second;i++)
+				{
+					tgt_replacement_status.at(i) = variable_num;
+				}
+				variable_num++;
+			}
+			else
+			{
+				rule_src_str += unit.word + " ";
+			}
+		}
+		else if (unit.type == 1)
+		{
+			if (config[1] == 'g')
+			{
+				rule_src_str += "x"+to_string(variable_num)+":"+unit.tag+" ";
+			}
+			else
+			{
+				rule_src_str += "x"+to_string(variable_num)+":"+unit.word+" ";
+			}
+			for (int i=unit.tgt_span.first;i<=unit.tgt_span.first+unit.tgt_span.second;i++)
 			{
 				tgt_replacement_status.at(i) = variable_num;
 			}
 			variable_num++;
 		}
-	}
-	rule_src += node.label;
-
-	vector<Span> expanded_tgt_spans = expand_tgt_span(node.tgt_span,make_pair(0,tgt_sen_len-1));
-	for (auto expanded_tgt_span : expanded_tgt_spans)
-	{
-		string rule_tgt;
-		int i = expanded_tgt_span.first;
-		int tgt_span_end = expanded_tgt_span.first+expanded_tgt_span.second;
-		while(i<=tgt_span_end)
+		else if (unit.type == 0)
 		{
-			if (tgt_replacement_status.at(i) == -1)
+			if (config[1] == 'g')
 			{
-				rule_tgt += tgt_words.at(i) + " ";
-				i++;
+				rule_src_str += "x"+to_string(variable_num)+":"+unit.tag+" ";
+				for (int i=unit.tgt_span.first;i<=unit.tgt_span.first+unit.tgt_span.second;i++)
+				{
+					tgt_replacement_status.at(i) = variable_num;
+				}
+				variable_num++;
 			}
 			else
 			{
-				int src_variable_num = tgt_replacement_status.at(i);
-				rule_tgt += "x"+to_string(src_variable_num)+" ";
-				while(i<=tgt_span_end && tgt_replacement_status.at(i) == src_variable_num)
-				{
-					i++;
-				}
+				rule_src_str += unit.word+" ";
 			}
 		}
-		node.rules.push_back(rule_src+" ||| "+rule_tgt);
 	}
+	int i = expanded_tgt_span.first;
+	int tgt_span_end = expanded_tgt_span.first+expanded_tgt_span.second;
+	while(i<=tgt_span_end)
+	{
+		if (tgt_replacement_status.at(i) == -1)
+		{
+			rule_tgt_str += tgt_words.at(i) + " ";
+			i++;
+		}
+		else
+		{
+			int src_variable_num = tgt_replacement_status.at(i);
+			rule_tgt_str += "x"+to_string(src_variable_num)+" ";
+			while(i<=tgt_span_end && tgt_replacement_status.at(i) == src_variable_num)
+			{
+				i++;
+			}
+		}
+	}
+	node.rules.push_back(rule_src_str+" ||| "+rule_tgt_str);
+}
+
+bool TreeStrPair::is_config_valid(vector<RuleSrcUnit> &rule_src,string &config)
+{
+	bool is_leaf_config_valid = false;
+	bool is_inner_config_valid = false;
+	for (auto &unit : rule_src)
+	{
+		if (config[2] == 'l' || (config[2] == 'g' && unit.type == 2 && open_tags.find(unit.tag) != open_tags.end() ) )
+		{
+			is_leaf_config_valid = true;
+		}
+		if (config[1] == 'l' || (config[1] == 'g' && unit.type == 1) )
+		{
+			is_inner_config_valid = true;
+		}
+	}
+	if (is_leaf_config_valid == false || is_inner_config_valid == false)
+		return false;
+	return true;
 }
 
 void TreeStrPair::dump_rules(int sub_root_idx)
