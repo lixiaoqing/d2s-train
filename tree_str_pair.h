@@ -34,14 +34,14 @@ struct RuleSrcUnit
 	int type;
 	string word;
 	string tag;
+	int idx;
 	Span tgt_span;
-	double lex_weight;
 };
 
 class TreeStrPair
 {
 	public:
-		TreeStrPair(string &line_tree,string &line_str,string &line_align);
+		TreeStrPair(string &line_tree,string &line_str,string &line_align,map<string,double> *lex_s2t,map<string,double> *lex_t2s);
 		void extract_rules(int sub_root_idx);
 		void dump_rules(int sub_root_idx);
 
@@ -52,6 +52,7 @@ class TreeStrPair
 		Span merge_span(Span span1,Span span2);
 		void check_alignment_agreement();
 		void cal_span_for_each_node(int sub_root_idx);
+		void cal_lex_weight();
 		void extract_head_rule(SyntaxNode &node);
 		void extract_head_mod_rule(SyntaxNode &node);
 		vector<Span> expand_tgt_span(Span tgt_span,Span bound);
@@ -59,6 +60,8 @@ class TreeStrPair
 		bool is_config_valid(vector<RuleSrcUnit> &rule_src,string &config);
 
 	public:
+		map<string,double> *plex_s2t;
+		map<string,double> *plex_t2s;
 		int root_idx;
 		vector<SyntaxNode> src_nodes;
 		vector<vector<Span> > src_span_to_tgt_span;						//记录每个源端span投射到目标端的span
@@ -66,6 +69,8 @@ class TreeStrPair
 		vector<vector<int> > src_idx_to_tgt_idx;						//记录每个源端位置对应的目标端位置
 		vector<vector<int> > tgt_idx_to_src_idx;						//记录每个目标端位置对应的源端位置
 		vector<vector<bool> > src_span_to_alignment_agreement_flag;		//记录每个源端span是否满足对齐一致性
+		vector<double> lex_weight_t2s;									//记录每个源端单词的词汇权重
+		vector<double> lex_weight_s2t;									//记录每个目标端端单词的词汇权重
 		vector<string> tgt_words;
 		int src_sen_len;
 		int tgt_sen_len;
