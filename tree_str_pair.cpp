@@ -296,7 +296,7 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 				lex_weight_forward *= lex_weight_s2t.at(i);
 			}
 		}
-		node.rules.push_back(rule_src+" ||| "+rule_tgt+" ||| "+to_string(lex_weight_backward)+" "+to_string(lex_weight_forward));
+		node.rules.insert(rule_src+" ||| "+rule_tgt+" ||| "+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
 	}
 }
 
@@ -430,7 +430,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 	{
 		lex_weight_forward = 0.0;
 	}
-	node.rules.push_back(rule_src_str+" ||| "+rule_tgt_str+" ||| "+to_string(lex_weight_backward)+" "+to_string(lex_weight_forward));
+	node.rules.insert(rule_src_str+" ||| "+rule_tgt_str+" ||| "+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
 }
 
 bool TreeStrPair::is_config_valid(vector<RuleSrcUnit> &rule_src,string &config)
@@ -453,24 +453,26 @@ bool TreeStrPair::is_config_valid(vector<RuleSrcUnit> &rule_src,string &config)
 	return true;
 }
 
-void TreeStrPair::dump_rules(int sub_root_idx)
+void TreeStrPair::dump_rules(int sub_root_idx,vector<string> &rule_collector)
 {
 	auto &node = src_nodes.at(sub_root_idx);
 	if (node.children.empty() )                                           // 叶节点
 	{
 		for (auto rule : node.rules)
 		{
-			cout<<rule<<endl;
+			//cout<<rule<<endl;
+			rule_collector.push_back(rule);
 		}
 		return;
 	}
 	for (int child_idx : node.children)
 	{
-		dump_rules(child_idx);
+		dump_rules(child_idx,rule_collector);
 	}
 	for (auto rule : node.rules)
 	{
-		cout<<rule<<endl;
+		//cout<<rule<<endl;
+		rule_collector.push_back(rule);
 	}
 
 }

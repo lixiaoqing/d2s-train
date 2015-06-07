@@ -38,3 +38,24 @@ void print_vector(vector<int> &v)
 		cout<<e<<" ";
 	cout<<endl;
 }
+
+void load_data_into_blocks(vector<vector<string> > &data_blocks, ifstream &fin,int block_size)
+{
+	vector<string> block;
+	int num = 0;
+	string line;
+	while(getline(fin,line))
+	{
+		block.push_back(line);
+		num++;
+		if (num%block_size == 0)
+		{
+			data_blocks.push_back(block);
+			block.clear();
+		}
+	}
+	if (block.size() > 0)
+	{
+		data_blocks.push_back(block);
+	}
+}
