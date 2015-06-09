@@ -211,10 +211,10 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 		if (src_span_to_alignment_agreement_flag[node.idx][0] == true)
 		{
 			node.lex_align_consistent = true;
-			node.substree_align_consistent = true;
+			node.subtree_align_consistent = true;
 		}
 		//cout<<node.word<<' '<<src_nodes.at(node.father).word<<' '<<node.src_span.first<<' '<<node.src_span.second<<' ';
-		//cout<<node.tgt_span.first<<' '<<node.tgt_span.second<<' '<<node.lex_align_consistent<<' '<<node.substree_align_consistent<<'\n';
+		//cout<<node.tgt_span.first<<' '<<node.tgt_span.second<<' '<<node.lex_align_consistent<<' '<<node.subtree_align_consistent<<'\n';
 		return;
 	}
 	for (int child_idx : node.children)
@@ -232,10 +232,10 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 	}
 	if (src_span_to_alignment_agreement_flag[node.src_span.first][node.src_span.second] == true)
 	{
-		node.substree_align_consistent = true;
+		node.subtree_align_consistent = true;
 	}
 	//cout<<node.word<<' '<<src_nodes.at(node.father).word<<' '<<node.src_span.first<<' '<<node.src_span.second<<' ';
-	//cout<<node.tgt_span.first<<' '<<node.tgt_span.second<<' '<<node.lex_align_consistent<<' '<<node.substree_align_consistent<<'\n';
+	//cout<<node.tgt_span.first<<' '<<node.tgt_span.second<<' '<<node.lex_align_consistent<<' '<<node.subtree_align_consistent<<'\n';
 }
 
 /**************************************************************************************
@@ -266,7 +266,7 @@ void TreeStrPair::extract_rules(int sub_root_idx)
 		bool flag = true;
 		for (int child_idx : node.children)
 		{
-			if (src_nodes.at(child_idx).substree_align_consistent == false)
+			if (src_nodes.at(child_idx).subtree_align_consistent == false)
 			{
 				flag = false;
 				break;

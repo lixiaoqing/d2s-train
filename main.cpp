@@ -18,10 +18,28 @@ int main(int argc, char* argv[])
 	ifstream ft(argv[1]);
 	ifstream fs(argv[2]);
 	ifstream fa(argv[3]);
-	//ifstream ft("toy.ch.dep");
-	//ifstream fs("toy.en");
-	//ifstream fa("toy.align");
+	/*
+	map<string,double> lex_s2t;
+	map<string,double> lex_t2s;
+    load_lex_trans_table(lex_s2t,argv[4]);
+    load_lex_trans_table(lex_t2s,argv[5]);
+    RuleCounter rule_counter;
 	string line_tree,line_str,line_align;
+	while (getline(ft,line_tree))
+	{
+		getline(fs,line_str);
+		getline(fa,line_align);
+		vector<string> rules;
+		TreeStrPair tspair = TreeStrPair(line_tree,line_str,line_align,&lex_s2t,&lex_t2s);
+		tspair.extract_rules(tspair.root_idx);
+		tspair.dump_rules(tspair.root_idx,rules);
+		for (auto &rule : rules)
+		{
+			rule_counter.update(rule);
+		}
+	}
+    rule_counter.dump_rules();
+	*/
 	vector<vector<string> > line_tree_vecs;
 	vector<vector<string> > line_str_vecs;
 	vector<vector<string> > line_align_vecs;
@@ -31,8 +49,6 @@ int main(int argc, char* argv[])
 	load_data_into_blocks(line_align_vecs,fa,block_size);
 	map<string,double> lex_s2t;
 	map<string,double> lex_t2s;
-    //load_lex_trans_table(lex_s2t,"toy.lex.s2t");
-    //load_lex_trans_table(lex_t2s,"toy.lex.t2s");
     load_lex_trans_table(lex_s2t,argv[4]);
     load_lex_trans_table(lex_t2s,argv[5]);
     RuleCounter rule_counter;
@@ -61,6 +77,5 @@ int main(int argc, char* argv[])
 			}
 		}
 	}
-
     rule_counter.dump_rules();
 }

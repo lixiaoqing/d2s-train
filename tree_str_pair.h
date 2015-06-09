@@ -17,7 +17,7 @@ struct SyntaxNode
 	Span tgt_span;                         			// 该节点对应的目标端span
 	set<string> rules;								// 该节点所有规则的字符串形式
 	bool lex_align_consistent;						// 该节点单词是否满足对齐一致性
-	bool substree_align_consistent;					// 该节点对应的子树是否满足对齐一致性
+	bool subtree_align_consistent;					// 该节点对应的子树是否满足对齐一致性
 	
 	SyntaxNode ()
 	{
@@ -26,7 +26,7 @@ struct SyntaxNode
 		src_span = make_pair(-1,-1);
 		tgt_span = make_pair(-1,-1);
 		lex_align_consistent = false;
-		lex_align_consistent = false;
+		subtree_align_consistent = false;
 	}
 };
 
