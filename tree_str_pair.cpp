@@ -296,7 +296,9 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 				lex_weight_forward *= lex_weight_s2t.at(i);
 			}
 		}
-		node.rules.insert(rule_src+" ||| "+rule_tgt+" ||| "+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
+		string tgt_nt_idx_to_src_nt_idx = "0";
+		node.rules.insert(rule_src+" ||| "+rule_tgt+"||| "+tgt_nt_idx_to_src_nt_idx+" ||| "
+				          +to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
 	}
 }
 
@@ -336,7 +338,8 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 	if (is_config_valid(rule_src,config) == false)
 		return;
 	string rule_src_str,rule_tgt_str;
-	int variable_num = 0;													//记录当前变量是源端的第几个变量
+	vector<int> proj_src_nt_idx_vec;
+	int src_nt_idx = 0;														//记录当前变量是源端的第几个变量
 	vector<int> tgt_replacement_status(tgt_sen_len,-1);						//记录目标端的每个单词对应的源端第几个变量
 	double lex_weight_backward = 1.0;
 	bool flag = false;														//检查源端是否包含对齐的单词
@@ -346,12 +349,12 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 		{
 			if (config[2] == 'g' && open_tags.find(unit.tag) != open_tags.end() )
 			{
-				rule_src_str += "x"+to_string(variable_num)+":"+unit.tag+" ";
+				rule_src_str += "[x]"+unit.tag+" ";
 				for (int i=unit.tgt_span.first;i<=unit.tgt_span.first+unit.tgt_span.second;i++)
 				{
-					tgt_replacement_status.at(i) = variable_num;
+					tgt_replacement_status.at(i) = src_nt_idx;
 				}
-				variable_num++;
+				src_nt_idx++;
 			}
 			else
 			{
@@ -364,28 +367,28 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 		{
 			if (config[1] == 'g')
 			{
-				rule_src_str += "x"+to_string(variable_num)+":"+unit.tag+" ";
+				rule_src_str += "[x]"+unit.tag+" ";
 			}
 			else
 			{
-				rule_src_str += "x"+to_string(variable_num)+":"+unit.word+" ";
+				rule_src_str += "[x]"+unit.word+" ";
 			}
 			for (int i=unit.tgt_span.first;i<=unit.tgt_span.first+unit.tgt_span.second;i++)
 			{
-				tgt_replacement_status.at(i) = variable_num;
+				tgt_replacement_status.at(i) = src_nt_idx;
 			}
-			variable_num++;
+			src_nt_idx++;
 		}
 		else if (unit.type == 0)											//中心词节点
 		{
 			if (config[1] == 'g')
 			{
-				rule_src_str += "x"+to_string(variable_num)+":"+unit.tag+" ";
+				rule_src_str += "[x]"+unit.tag+" ";
 				for (int i=unit.tgt_span.first;i<=unit.tgt_span.first+unit.tgt_span.second;i++)
 				{
-					tgt_replacement_status.at(i) = variable_num;
+					tgt_replacement_status.at(i) = src_nt_idx;
 				}
-				variable_num++;
+				src_nt_idx++;
 			}
 			else
 			{
@@ -418,9 +421,10 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 		}
 		else
 		{
-			int src_variable_num = tgt_replacement_status.at(i);
-			rule_tgt_str += "x"+to_string(src_variable_num)+" ";
-			while(i<=tgt_span_end && tgt_replacement_status.at(i) == src_variable_num)
+			int proj_src_nt_idx = tgt_replacement_status.at(i);
+			proj_src_nt_idx_vec.push_back(proj_src_nt_idx);
+			rule_tgt_str += "[x] ";
+			while(i<=tgt_span_end && tgt_replacement_status.at(i) == proj_src_nt_idx)
 			{
 				i++;
 			}
@@ -430,7 +434,13 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 	{
 		lex_weight_forward = 0.0;
 	}
-	node.rules.insert(rule_src_str+" ||| "+rule_tgt_str+" ||| "+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
+	string tgt_nt_idx_to_src_nt_idx = to_string(src_nt_idx)+" ";
+	for (int proj_src_nt_idx : proj_src_nt_idx_vec)
+	{
+		tgt_nt_idx_to_src_nt_idx += to_string(proj_src_nt_idx)+" ";
+	}
+	node.rules.insert(rule_src_str+"||| "+rule_tgt_str+"||| "+tgt_nt_idx_to_src_nt_idx+"||| "
+			          +to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
 }
 
 bool TreeStrPair::is_config_valid(vector<RuleSrcUnit> &rule_src,string &config)

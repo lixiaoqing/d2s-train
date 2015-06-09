@@ -5,9 +5,10 @@ void RuleCounter::update(string &rule)
 	vector<string> vs = Split(rule," ||| ");
 	string rule_src = vs[0];
 	string rule_tgt = vs[1];
-	double lex_weight_t2s = stod(vs[2]);
-	double lex_weight_s2t = stod(vs[3]);
-	string rule_str = rule_src + " ||| " + rule_tgt;
+	string tgt_nt_idx_to_src_nt_idx = vs[2];
+	double lex_weight_t2s = stod(vs[3]);
+	double lex_weight_s2t = stod(vs[4]);
+	string rule_str = rule_src + " ||| " + rule_tgt + " ||| " + tgt_nt_idx_to_src_nt_idx;
     auto it1 = rule2count_and_accumulate_lex_weight.find(rule_str);
     if (it1 != rule2count_and_accumulate_lex_weight.end())
     {
@@ -43,6 +44,12 @@ void RuleCounter::update(string &rule)
 
 void RuleCounter::dump_rules()
 {
+	ofstream fout("rule-table");
+	if (!fout.is_open())
+	{
+		cerr<<"fails to open rule-table to write\n";
+		return;
+	}
     for (auto &kvp : rule2count_and_accumulate_lex_weight)
     {
         string rule = kvp.first;
@@ -54,6 +61,6 @@ void RuleCounter::dump_rules()
         double lex_weight_s2t = kvp.second.acc_lex_weight_s2t/rule_count;
         double trans_prob_t2s = rule_count/rule_src2count[rule_src];
         double trans_prob_s2t = rule_count/rule_tgt2count[rule_tgt];
-        cout<<rule<<" ||| "<<trans_prob_t2s<<" "<<trans_prob_s2t<<" "<<lex_weight_t2s<<" "<<lex_weight_s2t<<endl;
+        fout<<rule<<" ||| "<<trans_prob_t2s<<" "<<trans_prob_s2t<<" "<<lex_weight_t2s<<" "<<lex_weight_s2t<<endl;
     }
 }
