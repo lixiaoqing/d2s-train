@@ -213,6 +213,10 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 			node.lex_align_consistent = true;
 			node.subtree_align_consistent = true;
 		}
+		if (src_idx_to_tgt_idx.at(node.idx).empty())					 // 允许head-rule中的源端以及head-modifer-rule中的中心词对空
+		{
+			node.lex_align_consistent = true;
+		}
 		//cout<<node.word<<' '<<src_nodes.at(node.father).word<<' '<<node.src_span.first<<' '<<node.src_span.second<<' ';
 		//cout<<node.tgt_span.first<<' '<<node.tgt_span.second<<' '<<node.lex_align_consistent<<' '<<node.subtree_align_consistent<<'\n';
 		return;
@@ -226,9 +230,9 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 	node.src_span = merge_span(make_pair(first_child.src_span.first,last_child.src_span.first+last_child.src_span.second
 								-first_child.src_span.first),make_pair(node.idx,0));
 	node.tgt_span = src_span_to_tgt_span[node.src_span.first][node.src_span.second];
-	if (src_span_to_alignment_agreement_flag[node.idx][0] == true)
+	if (src_span_to_alignment_agreement_flag[node.idx][0] == true || src_idx_to_tgt_idx.at(node.idx).empty())
 	{
-		node.lex_align_consistent = true;
+		node.lex_align_consistent = true; 							// 允许head-rule中的源端以及head-modifer-rule中的中心词对空
 	}
 	if (src_span_to_alignment_agreement_flag[node.src_span.first][node.src_span.second] == true)
 	{
@@ -283,6 +287,15 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 {
 	string rule_src = node.word;
 	double lex_weight_backward = lex_weight_t2s.at(node.idx);
+	if (src_idx_to_tgt_idx.at(node.idx).empty())
+	{
+		string rule_tgt = "NULL";
+		double lex_weight_forward = 0.0;
+		string tgt_nt_idx_to_src_nt_idx = "0";
+		node.rules.insert(rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx+" ||| "
+				+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
+		return;
+	}
 	vector<Span> expanded_tgt_spans = expand_tgt_span(src_span_to_tgt_span[node.idx][0],make_pair(0,tgt_sen_len-1));
 	for (auto expanded_tgt_span : expanded_tgt_spans)
 	{
@@ -381,7 +394,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 		}
 		else if (unit.type == 0)											//中心词节点
 		{
-			if (config[1] == 'g')
+			if (config[1] == 'g' && unit.tgt_span.first != -1)				//对空的中心词不泛化
 			{
 				rule_src_str += "[x]"+unit.tag+" ";
 				for (int i=unit.tgt_span.first;i<=unit.tgt_span.first+unit.tgt_span.second;i++)
