@@ -290,7 +290,7 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 	if (src_idx_to_tgt_idx.at(node.idx).empty())
 	{
 		string rule_tgt = "NULL";
-		double lex_weight_forward = 0.0;
+		double lex_weight_forward = lex_weight_backward;		//TODO 假定P(NULL|src_word) = P(src_word|NULL)
 		string tgt_nt_idx_to_src_nt_idx = "0";
 		node.rules.insert(rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx+" ||| "
 				+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
@@ -304,10 +304,7 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 		for (int i=expanded_tgt_span.first; i<=expanded_tgt_span.first+expanded_tgt_span.second; i++)
 		{
 			rule_tgt += tgt_words.at(i) + " ";
-			if (!tgt_idx_to_src_idx.at(i).empty())
-			{
-				lex_weight_forward *= lex_weight_s2t.at(i);
-			}
+			lex_weight_forward *= lex_weight_s2t.at(i);
 		}
 		string tgt_nt_idx_to_src_nt_idx = "0";
 		node.rules.insert(rule_src+" ||| "+rule_tgt+"||| "+tgt_nt_idx_to_src_nt_idx+" ||| "
@@ -355,7 +352,6 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 	int src_nt_idx = 0;														//记录当前变量是源端的第几个变量
 	vector<int> tgt_replacement_status(tgt_sen_len,-1);						//记录目标端的每个单词对应的源端第几个变量
 	double lex_weight_backward = 1.0;
-	bool flag = false;														//检查源端是否包含对齐的单词
 	for (auto &unit : rule_src)
 	{
 		if (unit.type == 2)													//叶节点
@@ -373,7 +369,6 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 			{
 				rule_src_str += unit.word + " ";
 				lex_weight_backward *= lex_weight_t2s.at(unit.idx);
-				flag = true;
 			}
 		}
 		else if (unit.type == 1)											//内部节点
@@ -407,29 +402,19 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 			{
 				rule_src_str += unit.word+" ";
 				lex_weight_backward *= lex_weight_t2s.at(unit.idx);
-				flag = true;
 			}
 		}
-	}
-	if (flag == false)
-	{
-		lex_weight_backward = 0.0;
 	}
 
 	int i = expanded_tgt_span.first;
 	int tgt_span_end = expanded_tgt_span.first+expanded_tgt_span.second;
 	double lex_weight_forward = 1.0;
-	flag = false;
 	while(i<=tgt_span_end)
 	{
 		if (tgt_replacement_status.at(i) == -1)
 		{
 			rule_tgt_str += tgt_words.at(i) + " ";
-			if (!tgt_idx_to_src_idx.at(i).empty())
-			{
-				lex_weight_forward *= lex_weight_s2t.at(i);
-				flag = true;
-			}
+			lex_weight_forward *= lex_weight_s2t.at(i);
 			i++;
 		}
 		else
@@ -442,10 +427,6 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 				i++;
 			}
 		}
-	}
-	if (flag == false)
-	{
-		lex_weight_forward = 0.0;
 	}
 	string tgt_nt_idx_to_src_nt_idx = to_string(src_nt_idx)+" ";
 	for (int proj_src_nt_idx : proj_src_nt_idx_vec)
@@ -497,8 +478,8 @@ void TreeStrPair::dump_rules(int sub_root_idx,vector<string> &rule_collector)
 		//cout<<rule<<endl;
 		rule_collector.push_back(rule);
 	}
-
 }
+
 /**************************************************************************************
  *  1. 函数功能: 将目标端span向两端扩展，直到遇到对齐的词
  *  2. 入口参数: 待扩展的目标端span
