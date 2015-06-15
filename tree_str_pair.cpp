@@ -296,12 +296,12 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 				+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
 		return;
 	}
-	vector<Span> expanded_tgt_spans = expand_tgt_span(src_span_to_tgt_span[node.idx][0],make_pair(0,tgt_sen_len-1));
-	for (auto expanded_tgt_span : expanded_tgt_spans)
+	vector<Span> rule_spans = expand_tgt_span(src_span_to_tgt_span[node.idx][0],make_pair(0,tgt_sen_len-1));
+	for (auto rule_span : rule_spans)
 	{
 		string rule_tgt;
 		double lex_weight_forward = 1.0;
-		for (int i=expanded_tgt_span.first; i<=expanded_tgt_span.first+expanded_tgt_span.second; i++)
+		for (int i=rule_span.first; i<=rule_span.first+rule_span.second; i++)
 		{
 			rule_tgt += tgt_words.at(i) + " ";
 			lex_weight_forward *= lex_weight_s2t.at(i);
@@ -332,25 +332,23 @@ void TreeStrPair::extract_head_mod_rule(SyntaxNode &node)
 	RuleSrcUnit unit = {0,node.word,node.tag,node.idx,src_span_to_tgt_span[node.idx][0]};
 	rule_src.push_back(unit);
 
-	vector<Span> expanded_tgt_spans = expand_tgt_span(node.tgt_span,make_pair(0,tgt_sen_len-1));
-	for (auto expanded_tgt_span : expanded_tgt_spans)
+	vector<Span> rule_spans = expand_tgt_span(node.tgt_span,make_pair(0,tgt_sen_len-1));
+	for (auto rule_span : rule_spans)
 	{
 		vector<string> configs = {"lll","llg","lgl","gll","lgg","glg","ggl","ggg"};
 		for (string &config : configs)
 		{
-			generalize_head_mod_rule(node,rule_src,expanded_tgt_span,config);
+			generalize_head_mod_rule(node,rule_src,rule_span,config);
 		}
 	}
 }
 
-void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> &rule_src,Span expanded_tgt_span,string &config)
+void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> &rule_src,Span rule_span,string &config)
 {
 	if (is_config_valid(rule_src,config) == false)
 		return;
-	string rule_src_str,rule_tgt_str;
-	vector<int> proj_src_nt_idx_vec;
-	int src_nt_idx = 0;														//记录当前变量是源端的第几个变量
-	vector<int> tgt_replacement_status(tgt_sen_len,-1);						//记录目标端的每个单词对应的源端第几个变量
+	string rule_src_str;
+	vector<vector<Span> > nt_spans_vec;										//记录每个源端非终结符在目标端对应的扩展后的span
 	double lex_weight_backward = 1.0;
 	for (auto &unit : rule_src)
 	{
@@ -359,11 +357,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 			if (config[2] == 'g' && open_tags.find(unit.tag) != open_tags.end() )
 			{
 				rule_src_str += "[x]"+unit.tag+" ";
-				for (int i=unit.tgt_span.first;i<=unit.tgt_span.first+unit.tgt_span.second;i++)
-				{
-					tgt_replacement_status.at(i) = src_nt_idx;
-				}
-				src_nt_idx++;
+				nt_spans_vec.push_back(expand_tgt_span(unit.tgt_span,rule_span) );
 			}
 			else
 			{
@@ -381,22 +375,14 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 			{
 				rule_src_str += "[x]"+unit.word+" ";
 			}
-			for (int i=unit.tgt_span.first;i<=unit.tgt_span.first+unit.tgt_span.second;i++)
-			{
-				tgt_replacement_status.at(i) = src_nt_idx;
-			}
-			src_nt_idx++;
+			nt_spans_vec.push_back(expand_tgt_span(unit.tgt_span,rule_span) );
 		}
 		else if (unit.type == 0)											//中心词节点
 		{
 			if (config[1] == 'g' && unit.tgt_span.first != -1)				//对空的中心词不泛化
 			{
 				rule_src_str += "[x]"+unit.tag+" ";
-				for (int i=unit.tgt_span.first;i<=unit.tgt_span.first+unit.tgt_span.second;i++)
-				{
-					tgt_replacement_status.at(i) = src_nt_idx;
-				}
-				src_nt_idx++;
+				nt_spans_vec.push_back(expand_tgt_span(unit.tgt_span,rule_span) );
 			}
 			else
 			{
@@ -406,35 +392,101 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 		}
 	}
 
-	int i = expanded_tgt_span.first;
-	int tgt_span_end = expanded_tgt_span.first+expanded_tgt_span.second;
-	double lex_weight_forward = 1.0;
-	while(i<=tgt_span_end)
+	vector<vector<int> > tgt_replacement_status_vec = get_tgt_replacement_status(nt_spans_vec,rule_span);
+	for (auto &tgt_replacement_status : tgt_replacement_status_vec)
 	{
-		if (tgt_replacement_status.at(i) == -1)
+		string rule_tgt_str;
+		vector<int> tgt_nt_idx_to_src_nt_idx;
+		int i = rule_span.first;
+		int tgt_span_end = rule_span.first+rule_span.second;
+		double lex_weight_forward = 1.0;
+		while(i<=tgt_span_end)
 		{
-			rule_tgt_str += tgt_words.at(i) + " ";
-			lex_weight_forward *= lex_weight_s2t.at(i);
-			i++;
-		}
-		else
-		{
-			int proj_src_nt_idx = tgt_replacement_status.at(i);
-			proj_src_nt_idx_vec.push_back(proj_src_nt_idx);
-			rule_tgt_str += "[x] ";
-			while(i<=tgt_span_end && tgt_replacement_status.at(i) == proj_src_nt_idx)
+			if (tgt_replacement_status.at(i) == -1)
 			{
+				rule_tgt_str += tgt_words.at(i) + " ";
+				lex_weight_forward *= lex_weight_s2t.at(i);
 				i++;
 			}
+			else
+			{
+				int src_nt_idx = tgt_replacement_status.at(i);
+				tgt_nt_idx_to_src_nt_idx.push_back(src_nt_idx);
+				rule_tgt_str += "[x] ";
+				while(i<=tgt_span_end && tgt_replacement_status.at(i) == src_nt_idx)
+				{
+					i++;
+				}
+			}
 		}
+		string tgt_nt_idx_to_src_nt_idx_str = to_string(nt_spans_vec.size())+" ";
+		for (int src_nt_idx : tgt_nt_idx_to_src_nt_idx)
+		{
+			tgt_nt_idx_to_src_nt_idx_str += to_string(src_nt_idx)+" ";
+		}
+		node.rules.insert(rule_src_str+"||| "+rule_tgt_str+"||| "+tgt_nt_idx_to_src_nt_idx_str+"||| "
+				+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
 	}
-	string tgt_nt_idx_to_src_nt_idx = to_string(src_nt_idx)+" ";
-	for (int proj_src_nt_idx : proj_src_nt_idx_vec)
+}
+
+vector<vector<int> > TreeStrPair::get_tgt_replacement_status(vector<vector<Span> > &nt_spans_vec,Span rule_span)
+{
+	if (nt_spans_vec.empty())
 	{
-		tgt_nt_idx_to_src_nt_idx += to_string(proj_src_nt_idx)+" ";
+		vector<int> tgt_replacement_status(tgt_sen_len,-1);
+		return {tgt_replacement_status};
 	}
-	node.rules.insert(rule_src_str+"||| "+rule_tgt_str+"||| "+tgt_nt_idx_to_src_nt_idx+"||| "
-			          +to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
+	vector<vector<Span> > nt_span_combinations_old;
+	vector<vector<Span> > nt_span_combinations_new;
+	for (auto first_nt_span : nt_spans_vec.front())
+	{
+		vector<Span> partial_combination = {first_nt_span};
+		nt_span_combinations_old.push_back(partial_combination);
+	}
+	for (int i=1;i<nt_spans_vec.size();i++)
+	{
+		for (auto partial_combination : nt_span_combinations_old)
+		{
+			for (auto next_nt_span : nt_spans_vec.at(i))
+			{
+				if (is_nt_span_combination_valid(partial_combination,next_nt_span))
+				{
+					vector<Span> expanded_partial_combination = partial_combination;
+					expanded_partial_combination.push_back(next_nt_span);
+					nt_span_combinations_new.push_back(expanded_partial_combination);
+				}
+			}
+		}
+		swap(nt_span_combinations_new,nt_span_combinations_old);
+		nt_span_combinations_new.clear();
+	}
+	
+	vector<vector<int> > tgt_replacement_status_vec;
+	for (auto nt_span_combination : nt_span_combinations_old)
+	{
+		vector<int> tgt_replacement_status(tgt_sen_len,-1);
+		for (int nt_idx=0;nt_idx<nt_span_combination.size();nt_idx++)
+		{
+			for (int i=nt_span_combination.at(nt_idx).first;i<=nt_span_combination.at(nt_idx).first+nt_span_combination.at(nt_idx).second;i++)
+			{
+				tgt_replacement_status.at(i) = nt_idx;
+			}
+		}
+		tgt_replacement_status_vec.push_back(tgt_replacement_status);
+	}
+	return tgt_replacement_status_vec;
+}
+
+bool TreeStrPair::is_nt_span_combination_valid(vector<Span> &partial_combination, Span next_nt_span)
+{
+	for (auto &nt_span : partial_combination)
+	{
+		if (nt_span.first < next_nt_span.first && nt_span.first+nt_span.second > next_nt_span.first)
+			return false;
+		if (next_nt_span.first < nt_span.first && next_nt_span.first+next_nt_span.second > nt_span.first)
+			return false;
+	}
+	return true;
 }
 
 bool TreeStrPair::is_config_valid(vector<RuleSrcUnit> &rule_src,string &config)
@@ -491,14 +543,14 @@ vector<Span> TreeStrPair::expand_tgt_span(Span tgt_span,Span bound)
 	if (tgt_span.first == -1)
 		return {tgt_span};
 	vector<Span> expanded_spans;
-	for (int tgt_beg=tgt_span.first;tgt_beg>=max(bound.first,tgt_span.first-3);tgt_beg--)       //向左扩展
+	for (int tgt_beg=tgt_span.first;tgt_beg>=max(bound.first,tgt_span.first-3);tgt_beg--)       							//向左扩展
 	{
-		if (tgt_beg<tgt_span.first && !tgt_idx_to_src_idx[tgt_beg].empty())           //遇到对齐的词
+		if (tgt_beg<tgt_span.first && !tgt_idx_to_src_idx[tgt_beg].empty())           										//遇到对齐的词
 			break;
 		int tgt_span_end = tgt_span.first+tgt_span.second;
 		for (int tgt_len=tgt_span_end-tgt_beg;tgt_beg+tgt_len<=min(tgt_span_end+3,bound.first+bound.second);tgt_len++)      //向右扩展
 		{
-			if (tgt_len>tgt_span_end-tgt_beg && !tgt_idx_to_src_idx[tgt_beg+tgt_len].empty())                     //遇到对齐的词
+			if (tgt_len>tgt_span_end-tgt_beg && !tgt_idx_to_src_idx[tgt_beg+tgt_len].empty())                     			//遇到对齐的词
 				break;
 			expanded_spans.push_back(make_pair(tgt_beg,tgt_len));
 		}
