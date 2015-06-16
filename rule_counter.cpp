@@ -31,14 +31,14 @@ void RuleCounter::update(string &rule)
         rule_src2count[rule_src] = 1;
     }
 
-    auto it3 = rule_tgt2count.find(rule_tgt);
+    auto it3 = rule_tgt2count.find(rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx);
     if (it3 != rule_tgt2count.end())
     {
         it3->second += 1;
     }
     else
     {
-        rule_tgt2count[rule_tgt] = 1;
+        rule_tgt2count[rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = 1;
     }
 }
 
@@ -56,11 +56,12 @@ void RuleCounter::dump_rules()
         vector<string> vs = Split(rule," ||| ");
         string &rule_src = vs[0];
         string &rule_tgt = vs[1];
+		string tgt_nt_idx_to_src_nt_idx = vs[2];
         double rule_count = (double)kvp.second.count;
         double lex_weight_t2s = kvp.second.acc_lex_weight_t2s/rule_count;
         double lex_weight_s2t = kvp.second.acc_lex_weight_s2t/rule_count;
         double trans_prob_t2s = rule_count/rule_src2count[rule_src];
-        double trans_prob_s2t = rule_count/rule_tgt2count[rule_tgt];
+        double trans_prob_s2t = rule_count/rule_tgt2count[rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx];
         fout<<rule<<" ||| "<<trans_prob_t2s<<" "<<trans_prob_s2t<<" "<<lex_weight_t2s<<" "<<lex_weight_s2t<<endl;
     }
 }
