@@ -31,14 +31,14 @@ void RuleCounter::update(Rule &rule)
         rule_src2count[rule_src] = 1;
     }
 
-    auto it3 = rule_tgt2count.find(rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx);
+    auto it3 = rule_tgt2count.find(rule_tgt);
     if (it3 != rule_tgt2count.end())
     {
         it3->second += 1;
     }
     else
     {
-        rule_tgt2count[rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = 1;
+        rule_tgt2count[rule_tgt] = 1;
     }
 }
 
@@ -60,8 +60,8 @@ void RuleCounter::dump_rules()
         double rule_count = (double)kvp.second.count;
         double lex_weight_t2s = kvp.second.acc_lex_weight_t2s/rule_count;
         double lex_weight_s2t = kvp.second.acc_lex_weight_s2t/rule_count;
-        double trans_prob_t2s = rule_count/rule_src2count[rule_src];
-        double trans_prob_s2t = rule_count/rule_tgt2count[rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx];
+        double trans_prob_t2s = rule_count/rule_tgt2count[rule_tgt];
+        double trans_prob_s2t = rule_count/rule_src2count[rule_src];
         fout<<rule<<" ||| "<<trans_prob_t2s<<" "<<trans_prob_s2t<<" "<<lex_weight_t2s<<" "<<lex_weight_s2t<<endl;
     }
 }

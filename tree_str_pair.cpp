@@ -51,6 +51,13 @@ void TreeStrPair::load_alignment(const string &line_align)
 	}
 }
 
+/**************************************************************************************
+ 1. 函数功能: 计算每个源端和目标端每个词的词汇权重
+ 2. 入口参数: 无
+ 3. 出口参数: 无
+ 4. 算法简介: a) 如果某个词w对空了，则其词汇权重为P(w|NULL)
+              b) 如果每个词w对齐到一个或多个词，则其词汇权重为mean(P(w|w'))
+************************************************************************************* */
 void TreeStrPair::cal_lex_weight()
 {
 	for (int i=0;i<src_sen_len;i++)
@@ -61,9 +68,9 @@ void TreeStrPair::cal_lex_weight()
 		}
 		else
 		{
-			for (int j=0;j<src_idx_to_tgt_idx.at(i).size();j++)
+			for (int j : src_idx_to_tgt_idx.at(i))
 			{
-				lex_weight_t2s.at(i) += (*plex_t2s)[src_nodes.at(i).word+" "+tgt_words.at(src_idx_to_tgt_idx.at(i).at(j))];
+				lex_weight_t2s.at(i) += (*plex_t2s)[src_nodes.at(i).word+" "+tgt_words.at(j)];
 			}
 			lex_weight_t2s.at(i) /= src_idx_to_tgt_idx.at(i).size();
 		}
@@ -77,9 +84,9 @@ void TreeStrPair::cal_lex_weight()
 		}
 		else
 		{
-			for (int j=0;j<tgt_idx_to_src_idx.at(i).size();j++)
+			for (int j: tgt_idx_to_src_idx.at(i))
 			{
-				lex_weight_s2t.at(i) += (*plex_s2t)[tgt_words.at(i)+" "+src_nodes.at(tgt_idx_to_src_idx.at(i).at(j)).word];
+				lex_weight_s2t.at(i) += (*plex_s2t)[tgt_words.at(i)+" "+src_nodes.at(j).word];
 			}
 			lex_weight_s2t.at(i) /= tgt_idx_to_src_idx.at(i).size();
 		}
@@ -110,6 +117,7 @@ void TreeStrPair::cal_proj_span()
 		}
 	}
 }
+
 /**************************************************************************************
  1. 函数功能: 将两个span合并为一个span
  2. 入口参数: 被合并的两个span
@@ -161,7 +169,7 @@ void TreeStrPair::check_alignment_agreement()
 
 /**************************************************************************************
  1. 函数功能: 将字符串解析成句法树
- 2. 入口参数: 一句话的句法分析结果，Berkeley Parser格式
+ 2. 入口参数: 一句话的依存句法分析结果，每个单元包括（词，词性，中心词位置）三个元素
  3. 出口参数: 无
  4. 算法简介: 见注释
 ************************************************************************************* */
@@ -180,12 +188,11 @@ void TreeStrPair::build_tree_from_str(const vector<string> &wt_hidx_vec)
 		src_nodes.at(i).tag = tag;
 		src_nodes.at(i).idx = i;
 		src_nodes.at(i).father = hidx;
-		if (hidx == -1)
+		if (hidx == -1)                                 //整个句子的中心词
 		{
 			root_idx = i;
-			src_nodes.at(i).father = i;
 		}
-		else
+		else                                            //更新父节点的子节点位置向量，子节点位置保持了从左到右的顺序
 		{
 			src_nodes.at(hidx).children.push_back(i);
 		}
@@ -198,8 +205,6 @@ void TreeStrPair::build_tree_from_str(const vector<string> &wt_hidx_vec)
  3. 出口参数: 无
  4. 算法简介: 1) 后序遍历当前子树
  			  2) 根据子节点的src_span和tgt_span计算当前节点的src_span和tgt_span
-			  3) 检查tgt_span中的每个词是否都对齐到src_span中，从而确定当前节点是否为
-			     边界节点
 ************************************************************************************* */
 void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 {
@@ -217,8 +222,6 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 		{
 			node.lex_align_consistent = true;
 		}
-		//cout<<node.word<<' '<<src_nodes.at(node.father).word<<' '<<node.src_span.first<<' '<<node.src_span.second<<' ';
-		//cout<<node.tgt_span.first<<' '<<node.tgt_span.second<<' '<<node.lex_align_consistent<<' '<<node.subtree_align_consistent<<'\n';
 		return;
 	}
 	for (int child_idx : node.children)
@@ -227,8 +230,8 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 	}
 	auto &first_child = src_nodes.at(node.children.front());
 	auto &last_child = src_nodes.at(node.children.back());
-	node.src_span = merge_span(make_pair(first_child.src_span.first,last_child.src_span.first+last_child.src_span.second
-								-first_child.src_span.first),make_pair(node.idx,0));
+    //首先合并第一个和最后一个孩子的源端span，然后与当前节点的源端span合并
+	node.src_span = merge_span(merge_span(first_child.src_span,last_child.src_span),make_pair(node.idx,0));
 	node.tgt_span = src_span_to_tgt_span[node.src_span.first][node.src_span.second];
 	if (src_span_to_alignment_agreement_flag[node.idx][0] == true || src_idx_to_tgt_idx.at(node.idx).empty())
 	{
@@ -238,8 +241,6 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 	{
 		node.subtree_align_consistent = true;
 	}
-	//cout<<node.word<<' '<<src_nodes.at(node.father).word<<' '<<node.src_span.first<<' '<<node.src_span.second<<' ';
-	//cout<<node.tgt_span.first<<' '<<node.tgt_span.second<<' '<<node.lex_align_consistent<<' '<<node.subtree_align_consistent<<'\n';
 }
 
 /**************************************************************************************
@@ -287,13 +288,11 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 {
 	string rule_src = node.word;
 	double lex_weight_backward = lex_weight_t2s.at(node.idx);
-	if (src_idx_to_tgt_idx.at(node.idx).empty())
+	if (src_idx_to_tgt_idx.at(node.idx).empty())                //该节点的单词对空了
 	{
 		string rule_tgt = "NULL";
-		double lex_weight_forward = lex_weight_backward;		//TODO 假定P(NULL|src_word) = P(src_word|NULL)
+		double lex_weight_forward = (*plex_t2s)["NULL "+node.word];
 		string tgt_nt_idx_to_src_nt_idx = "0";
-		//node.rules.insert(rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx+" ||| "
-				//+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
 		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = make_pair(lex_weight_backward,lex_weight_forward);
 		return;
 	}
@@ -308,8 +307,6 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 			lex_weight_forward *= lex_weight_s2t.at(i);
 		}
 		string tgt_nt_idx_to_src_nt_idx = "0";
-		//node.rules.insert(rule_src+" ||| "+rule_tgt+"||| "+tgt_nt_idx_to_src_nt_idx+" ||| "
-				          //+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
 		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = make_pair(lex_weight_backward,lex_weight_forward);
 	}
 }
@@ -426,10 +423,21 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 		{
 			tgt_nt_idx_to_src_nt_idx_str += to_string(src_nt_idx)+" ";
 		}
-		//node.rules.insert(rule_src_str+"||| "+rule_tgt_str+"||| "+tgt_nt_idx_to_src_nt_idx_str+"||| "
-				//+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
+        TrimLine(rule_src_str);
+        TrimLine(rule_tgt_str);
+        TrimLine(tgt_nt_idx_to_src_nt_idx_str);
 		node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str] = make_pair(lex_weight_backward,lex_weight_forward);
 	}
+}
+
+bool TreeStrPair::is_config_valid(vector<RuleSrcUnit> &rule_src,string &config)
+{
+    for (auto &unit : rule_src)
+    {
+        if (unit.type == 2 && config[2] == 'g' && open_tags.find(unit.tag) == open_tags.end())
+            return false;
+    }
+    return true;
 }
 
 vector<vector<int> > TreeStrPair::get_tgt_replacement_status(vector<vector<Span> > &nt_spans_vec,Span rule_span)
@@ -443,8 +451,7 @@ vector<vector<int> > TreeStrPair::get_tgt_replacement_status(vector<vector<Span>
 	vector<vector<Span> > nt_span_combinations_new;
 	for (auto first_nt_span : nt_spans_vec.front())
 	{
-		vector<Span> partial_combination = {first_nt_span};
-		nt_span_combinations_old.push_back(partial_combination);
+		nt_span_combinations_old.push_back({first_nt_span});
 	}
 	for (int i=1;i<nt_spans_vec.size();i++)
 	{
@@ -492,16 +499,6 @@ bool TreeStrPair::is_nt_span_combination_valid(vector<Span> &partial_combination
 	return true;
 }
 
-bool TreeStrPair::is_config_valid(vector<RuleSrcUnit> &rule_src,string &config)
-{
-    for (auto &unit : rule_src)
-    {
-        if (unit.type == 2 && config[2] == 'g' && open_tags.find(unit.tag) == open_tags.end())
-            return false;
-    }
-    return true;
-}
-
 void TreeStrPair::dump_rules(int sub_root_idx,vector<Rule> &rule_collector)
 {
 	auto &node = src_nodes.at(sub_root_idx);
@@ -509,7 +506,6 @@ void TreeStrPair::dump_rules(int sub_root_idx,vector<Rule> &rule_collector)
 	{
 		for (auto &kvp : node.rules)
 		{
-			//cout<<rule<<endl;
 			rule_collector.push_back({kvp.first,kvp.second.first,kvp.second.second});
 		}
 		return;
@@ -520,7 +516,6 @@ void TreeStrPair::dump_rules(int sub_root_idx,vector<Rule> &rule_collector)
 	}
 	for (auto &kvp : node.rules)
 	{
-		//cout<<rule<<endl;
 		rule_collector.push_back({kvp.first,kvp.second.first,kvp.second.second});
 	}
 }

@@ -6,8 +6,8 @@
 struct Rule
 {
 	string rule_str;
-	double lex_weight_forward;
 	double lex_weight_backward;
+	double lex_weight_forward;
 };
 
 struct CountAndLexWeight
