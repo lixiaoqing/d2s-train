@@ -292,8 +292,9 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 		string rule_tgt = "NULL";
 		double lex_weight_forward = lex_weight_backward;		//TODO 假定P(NULL|src_word) = P(src_word|NULL)
 		string tgt_nt_idx_to_src_nt_idx = "0";
-		node.rules.insert(rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx+" ||| "
-				+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
+		//node.rules.insert(rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx+" ||| "
+				//+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
+		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = make_pair(lex_weight_backward,lex_weight_forward);
 		return;
 	}
 	vector<Span> rule_spans = expand_tgt_span(src_span_to_tgt_span[node.idx][0],make_pair(0,tgt_sen_len-1));
@@ -307,8 +308,9 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 			lex_weight_forward *= lex_weight_s2t.at(i);
 		}
 		string tgt_nt_idx_to_src_nt_idx = "0";
-		node.rules.insert(rule_src+" ||| "+rule_tgt+"||| "+tgt_nt_idx_to_src_nt_idx+" ||| "
-				          +to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
+		//node.rules.insert(rule_src+" ||| "+rule_tgt+"||| "+tgt_nt_idx_to_src_nt_idx+" ||| "
+				          //+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
+		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = make_pair(lex_weight_backward,lex_weight_forward);
 	}
 }
 
@@ -379,7 +381,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 		}
 		else if (unit.type == 0)											//中心词节点
 		{
-			if (config[1] == 'g' && unit.tgt_span.first != -1)				//对空的中心词不泛化
+			if (config[0] == 'g' && unit.tgt_span.first != -1)				//对空的中心词不泛化
 			{
 				rule_src_str += "[x]"+unit.tag+" ";
 				nt_spans_vec.push_back(expand_tgt_span(unit.tgt_span,rule_span) );
@@ -424,8 +426,9 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 		{
 			tgt_nt_idx_to_src_nt_idx_str += to_string(src_nt_idx)+" ";
 		}
-		node.rules.insert(rule_src_str+"||| "+rule_tgt_str+"||| "+tgt_nt_idx_to_src_nt_idx_str+"||| "
-				+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
+		//node.rules.insert(rule_src_str+"||| "+rule_tgt_str+"||| "+tgt_nt_idx_to_src_nt_idx_str+"||| "
+				//+to_string(lex_weight_backward)+" ||| "+to_string(lex_weight_forward));
+		node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str] = make_pair(lex_weight_backward,lex_weight_forward);
 	}
 }
 
@@ -509,15 +512,15 @@ bool TreeStrPair::is_config_valid(vector<RuleSrcUnit> &rule_src,string &config)
 	return true;
 }
 
-void TreeStrPair::dump_rules(int sub_root_idx,vector<string> &rule_collector)
+void TreeStrPair::dump_rules(int sub_root_idx,vector<Rule> &rule_collector)
 {
 	auto &node = src_nodes.at(sub_root_idx);
 	if (node.children.empty() )                                           // 叶节点
 	{
-		for (auto rule : node.rules)
+		for (auto &kvp : node.rules)
 		{
 			//cout<<rule<<endl;
-			rule_collector.push_back(rule);
+			rule_collector.push_back({kvp.first,kvp.second.first,kvp.second.second});
 		}
 		return;
 	}
@@ -525,10 +528,10 @@ void TreeStrPair::dump_rules(int sub_root_idx,vector<string> &rule_collector)
 	{
 		dump_rules(child_idx,rule_collector);
 	}
-	for (auto rule : node.rules)
+	for (auto &kvp : node.rules)
 	{
 		//cout<<rule<<endl;
-		rule_collector.push_back(rule);
+		rule_collector.push_back({kvp.first,kvp.second.first,kvp.second.second});
 	}
 }
 

@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 	int block_num = line_tree_vecs.size();
 	for (size_t i=0;i<block_num;i++)
 	{
-		vector<vector<string> > rule_collectors;
+		vector<vector<Rule> > rule_collectors;
 		block_size = line_tree_vecs.at(i).size();
 		rule_collectors.resize(block_size);
 #pragma omp parallel for num_threads(16)

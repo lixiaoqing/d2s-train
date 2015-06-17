@@ -1,19 +1,37 @@
-[x]NN [x]P [x]AD [x]VV ||| [x] [x] [x] [x] ||| 4 0 3 2 1 ||| 1 1 1 1
-[x]NN [x]P 成功 [x]VV ||| [x] [x] successfully [x] ||| 3 0 2 1 ||| 1 1 0 0
-[x]NR 在 ||| in [x] ||| 1 0 ||| 1 1 0 0
-[x]NR 来自 ||| coming from [x] ||| 1 0 ||| 1 1 0 0
-[x]VV 的 ||| [x] ||| 1 0 ||| 1 0.5 0 1
-[x]世界杯 [x]在 [x]AD 举行 ||| [x] held [x] [x] ||| 3 0 2 1 ||| 1 1 0 0
-[x]世界杯 [x]在 成功 举行 ||| [x] held successfully [x] ||| 2 0 1 ||| 1 1 0 0
-[x]来自 的 ||| [x] ||| 1 0 ||| 1 0.5 0 1
-fifa ||| fifa ||| 0 ||| 1 1 0 0
-世界杯 ||| world cup ||| 0 ||| 1 1 0 0
-举行 ||| held ||| 0 ||| 1 1 0 0
-南非 ||| south africa ||| 0 ||| 1 1 0 0
-南非 在 ||| in south africa ||| 0 ||| 1 1 0 0
-在 ||| in ||| 0 ||| 1 1 0 0
-成功 ||| successfully ||| 0 ||| 1 1 0 0
-来自 ||| coming from ||| 0 ||| 1 1 0 0
-法国 ||| france ||| 0 ||| 1 1 0 0
-法国 来自 ||| coming from france ||| 0 ||| 1 1 0 0
-的 ||| NULL ||| 0 ||| 1 1 0 0
+2010年 fifa [x]NN  ||| 2010 fifa [x]  ||| 1 0  ||| 0.5 1 0 0
+2010年 fifa [x]NN  ||| 2010 fifa [x] was  ||| 1 0  ||| 0.5 1 0 0
+2010年 fifa 世界杯  ||| 2010 fifa world cup  ||| 0  ||| 0.5 1 0 0
+2010年 fifa 世界杯  ||| 2010 fifa world cup was  ||| 0  ||| 0.5 1 0 0
+2010年 ||| 2010  ||| 0 ||| 1 1 0 0
+[x]NN [x]P [x]AD [x]VV  ||| [x] [x] [x] [x]  ||| 4 0 3 2 1  ||| 0.5 0.5 1 1
+[x]NN [x]P [x]AD [x]VV  ||| [x] was [x] [x] [x]  ||| 4 0 3 2 1  ||| 0.5 0.5 0 1
+[x]NN [x]P [x]AD 举行  ||| [x] held [x] [x]  ||| 3 0 2 1  ||| 0.5 0.5 0 0
+[x]NN [x]P [x]AD 举行  ||| [x] was held [x] [x]  ||| 3 0 2 1  ||| 0.5 0.5 0 0
+[x]NN [x]P 成功 [x]VV  ||| [x] [x] successfully [x]  ||| 3 0 2 1  ||| 0.5 0.5 0 0
+[x]NN [x]P 成功 [x]VV  ||| [x] was [x] successfully [x]  ||| 3 0 2 1  ||| 0.5 0.5 0 0
+[x]NN [x]P 成功 举行  ||| [x] held successfully [x]  ||| 2 0 1  ||| 0.5 0.5 0 0
+[x]NN [x]P 成功 举行  ||| [x] was held successfully [x]  ||| 2 0 1  ||| 0.5 0.5 0 0
+[x]NR [x]P  ||| [x] [x]  ||| 2 1 0  ||| 1 1 1 1
+[x]NR 在  ||| in [x]  ||| 1 0  ||| 1 1 0 0
+[x]NT [x]FW [x]NN  ||| [x] [x] [x]  ||| 3 0 1 2  ||| 0.5 1 1 1
+[x]NT [x]FW [x]NN  ||| [x] [x] [x] was  ||| 3 0 1 2  ||| 0.5 1 0 1
+[x]NT [x]FW 世界杯  ||| [x] [x] world cup  ||| 2 0 1  ||| 0.5 1 0 0
+[x]NT [x]FW 世界杯  ||| [x] [x] world cup was  ||| 2 0 1  ||| 0.5 1 0 0
+[x]世界杯 [x]在 [x]AD [x]VV  ||| [x] [x] [x] [x]  ||| 4 0 3 2 1  ||| 0.5 0.5 1 1
+[x]世界杯 [x]在 [x]AD [x]VV  ||| [x] was [x] [x] [x]  ||| 4 0 3 2 1  ||| 0.5 0.5 0 1
+[x]世界杯 [x]在 [x]AD 举行  ||| [x] held [x] [x]  ||| 3 0 2 1  ||| 0.5 0.5 0 0
+[x]世界杯 [x]在 [x]AD 举行  ||| [x] was held [x] [x]  ||| 3 0 2 1  ||| 0.5 0.5 0 0
+[x]世界杯 [x]在 成功 [x]VV  ||| [x] [x] successfully [x]  ||| 3 0 2 1  ||| 0.5 0.5 0 0
+[x]世界杯 [x]在 成功 [x]VV  ||| [x] was [x] successfully [x]  ||| 3 0 2 1  ||| 0.5 0.5 0 0
+[x]世界杯 [x]在 成功 举行  ||| [x] held successfully [x]  ||| 2 0 1  ||| 0.5 0.5 0 0
+[x]世界杯 [x]在 成功 举行  ||| [x] was held successfully [x]  ||| 2 0 1  ||| 0.5 0.5 0 0
+fifa ||| fifa  ||| 0 ||| 1 1 0 0
+世界杯 ||| world cup  ||| 0 ||| 0.5 1 0 0
+世界杯 ||| world cup was  ||| 0 ||| 0.5 1 0 0
+举行 ||| held  ||| 0 ||| 0.5 1 0 0
+举行 ||| was held  ||| 0 ||| 0.5 1 0 0
+南非 [x]P  ||| [x] south africa  ||| 1 0  ||| 1 1 0 0
+南非 ||| south africa  ||| 0 ||| 1 1 0 0
+南非 在  ||| in south africa  ||| 0  ||| 1 1 0 0
+在 ||| in  ||| 0 ||| 1 1 0 0
+成功 ||| successfully  ||| 0 ||| 1 1 0 0

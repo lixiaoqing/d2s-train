@@ -1,14 +1,14 @@
 #include "rule_counter.h"
 
-void RuleCounter::update(string &rule)
+void RuleCounter::update(Rule &rule)
 {
-	vector<string> vs = Split(rule," ||| ");
+	string rule_str = rule.rule_str;
+	double lex_weight_t2s = rule.lex_weight_backward;
+	double lex_weight_s2t = rule.lex_weight_forward;
+	vector<string> vs = Split(rule_str," ||| ");
 	string rule_src = vs[0];
 	string rule_tgt = vs[1];
 	string tgt_nt_idx_to_src_nt_idx = vs[2];
-	double lex_weight_t2s = stod(vs[3]);
-	double lex_weight_s2t = stod(vs[4]);
-	string rule_str = rule_src + " ||| " + rule_tgt + " ||| " + tgt_nt_idx_to_src_nt_idx;
     auto it1 = rule2count_and_accumulate_lex_weight.find(rule_str);
     if (it1 != rule2count_and_accumulate_lex_weight.end())
     {

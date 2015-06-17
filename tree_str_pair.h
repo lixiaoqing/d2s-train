@@ -15,7 +15,7 @@ struct SyntaxNode
 	vector<int> children;							// 该节点的孩子节点在句子中的位置
 	Span src_span;                         			// 该节点对应的源端span,用起始位置和跨度长度表示
 	Span tgt_span;                         			// 该节点对应的目标端span
-	set<string> rules;								// 该节点所有规则的字符串形式
+	map<string,pair<double,double> > rules;			// 该节点所有规则的字符串形式
 	bool lex_align_consistent;						// 该节点单词是否满足对齐一致性
 	bool subtree_align_consistent;					// 该节点对应的子树是否满足对齐一致性
 	
@@ -44,7 +44,7 @@ class TreeStrPair
 	public:
 		TreeStrPair(string &line_tree,string &line_str,string &line_align,map<string,double> *lex_s2t,map<string,double> *lex_t2s);
 		void extract_rules(int sub_root_idx);
-		void dump_rules(int sub_root_idx,vector<string> &rule_collector);
+		void dump_rules(int sub_root_idx,vector<Rule> &rule_collector);
 
 	private:
 		void build_tree_from_str(const vector<string> &word_hidx_vec);

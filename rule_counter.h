@@ -3,6 +3,13 @@
 #include "stdafx.h"
 #include "myutils.h"
 
+struct Rule
+{
+	string rule_str;
+	double lex_weight_forward;
+	double lex_weight_backward;
+};
+
 struct CountAndLexWeight
 {
     int count;
@@ -13,7 +20,7 @@ struct CountAndLexWeight
 class RuleCounter
 {
     public:
-        void update(string &rule);
+        void update(Rule &rule);
         void dump_rules();
 
     private:
