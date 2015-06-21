@@ -59,3 +59,17 @@ void load_data_into_blocks(vector<vector<string> > &data_blocks, ifstream &fin,i
 		data_blocks.push_back(block);
 	}
 }
+
+double d2log(double prob)
+{
+    double log_prob = 0.0;
+    if( abs(prob) <= numeric_limits<double>::epsilon() )
+    {
+        log_prob = -99;
+    }
+    else
+    {
+        log_prob = log10(prob);
+    }
+    return log_prob;
+}
