@@ -63,6 +63,7 @@ class TreeStrPair
 		bool is_config_valid(vector<RuleSrcUnit> &rule_src,string &config);
 
 	public:
+        bool valid_flag;
 		map<string,double> *plex_s2t;
 		map<string,double> *plex_t2s;
 		int root_idx;

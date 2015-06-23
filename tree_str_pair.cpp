@@ -2,6 +2,13 @@
 
 TreeStrPair::TreeStrPair(string &line_tree,string &line_str,string &line_align,map<string,double> *lex_s2t,map<string,double> *lex_t2s)
 {
+    valid_flag = true;
+    TrimLine(line_tree);
+    if (line_tree.size() == 0)
+    {
+        valid_flag = false;
+        return;
+    }
 	plex_s2t = lex_s2t;
 	plex_t2s = lex_t2s;
 	open_tags = {"CD","OD","DT","JJ","NN","NR","NT","AD","FW","PN"};

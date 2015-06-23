@@ -64,6 +64,8 @@ int main(int argc, char* argv[])
 		for (size_t j=0;j<block_size;j++)
 		{
 			TreeStrPair tspair = TreeStrPair(line_tree_vecs.at(i).at(j),line_str_vecs.at(i).at(j),line_align_vecs.at(i).at(j),&lex_s2t,&lex_t2s);
+            if (tspair.valid_flag == false)
+                continue;
 			tspair.extract_rules(tspair.root_idx);
 			tspair.dump_rules(tspair.root_idx,rule_collectors.at(j));
 		}
