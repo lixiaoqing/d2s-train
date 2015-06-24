@@ -498,9 +498,11 @@ bool TreeStrPair::is_nt_span_combination_valid(vector<Span> &partial_combination
 {
 	for (auto &nt_span : partial_combination)
 	{
-		if (nt_span.first < next_nt_span.first && nt_span.first+nt_span.second > next_nt_span.first)
+		if (nt_span.first == next_nt_span.first)            //只有依存树不满足投射性时才会出现这种情况
+            return false;
+		if (nt_span.first < next_nt_span.first && nt_span.first+nt_span.second >= next_nt_span.first)
 			return false;
-		if (next_nt_span.first < nt_span.first && next_nt_span.first+next_nt_span.second > nt_span.first)
+		if (next_nt_span.first < nt_span.first && next_nt_span.first+next_nt_span.second >= nt_span.first)
 			return false;
 	}
 	return true;
