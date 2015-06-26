@@ -56,8 +56,12 @@ void RuleCounter::dump_rules()
 		cerr<<"fails to open rule-table to write\n";
 		return;
 	}
+    int num = 0;
     for (auto &kvp : rule2count_and_accumulate_lex_weight)
     {
+        num++;
+        if (num%1000000 == 0)
+            cout<<num/1000000<<"M\n";
         string rule = kvp.first;
         vector<string> vs = Split(rule," ||| ");
         string rule_src = vs[0];
