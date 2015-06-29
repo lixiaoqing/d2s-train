@@ -307,7 +307,7 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 		string rule_tgt = "NULL";
 		double lex_weight_forward = (*plex_t2s)["NULL "+node.word];
 		string tgt_nt_idx_to_src_nt_idx = "0";
-		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = make_pair(lex_weight_backward,lex_weight_forward);
+		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx+" ||| lll"] = make_pair(lex_weight_backward,lex_weight_forward);
 		return;
 	}
 	vector<Span> rule_spans = expand_tgt_span(src_span_to_tgt_span[node.idx][0],make_pair(0,tgt_sen_len-1));
@@ -321,7 +321,7 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 			lex_weight_forward *= lex_weight_s2t.at(i);
 		}
 		string tgt_nt_idx_to_src_nt_idx = "0";
-		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = make_pair(lex_weight_backward,lex_weight_forward);
+		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx+" ||| lll"] = make_pair(lex_weight_backward,lex_weight_forward);
 	}
 }
 
@@ -440,7 +440,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
         TrimLine(rule_src_str);
         TrimLine(rule_tgt_str);
         TrimLine(tgt_nt_idx_to_src_nt_idx_str);
-		node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str] = make_pair(lex_weight_backward,lex_weight_forward);
+		node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str+" ||| "+config] = make_pair(lex_weight_backward,lex_weight_forward);
 	}
 }
 
