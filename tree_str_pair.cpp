@@ -34,6 +34,8 @@ TreeStrPair::TreeStrPair(string &line_tree,string &line_str,string &line_align,m
 	}
 
 	load_alignment(line_align);
+    if (valid_flag == false)
+        return;
 	cal_proj_span();
 	check_alignment_agreement();
 	cal_span_for_each_node(root_idx);
@@ -51,6 +53,11 @@ void TreeStrPair::load_alignment(const string &line_align)
 		vector<string> idx_pair = Split(align,"-");
 		int src_idx = stoi(idx_pair.at(0));
 		int tgt_idx = stoi(idx_pair.at(1));
+        if (src_idx >= src_sen_len || tgt_idx>= tgt_sen_len)
+        {
+            valid_flag = false;
+            return;
+        }
 		src_span_to_tgt_span[src_idx][0] = merge_span(src_span_to_tgt_span[src_idx][0],make_pair(tgt_idx,0));
 		tgt_span_to_src_span[tgt_idx][0] = merge_span(tgt_span_to_src_span[tgt_idx][0],make_pair(src_idx,0));
 		src_idx_to_tgt_idx[src_idx].push_back(tgt_idx);

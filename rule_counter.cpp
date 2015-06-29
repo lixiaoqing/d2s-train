@@ -123,6 +123,7 @@ void RuleCounter::dump_rules()
 		fout.write((char*)&prob_vec[0],sizeof(double)*prob_vec.size());
         //cout<<rule<<" ||| "<<trans_prob_t2s<<" "<<trans_prob_s2t<<" "<<lex_weight_t2s<<" "<<lex_weight_s2t<<endl;
     }
+    cout<<num<<endl;
     fout.close();
 
 	ofstream f_src_vocab("vocab.ch");
