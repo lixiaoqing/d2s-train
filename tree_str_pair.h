@@ -60,7 +60,6 @@ class TreeStrPair
 		void generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> &rule_src,Span expanded_tgt_span,string &config);
 		vector<vector<int> > get_tgt_replacement_status(vector<vector<Span> > &nt_spans_vec,Span rule_span);
 		bool is_nt_span_combination_valid(vector<Span> &partial_combination, Span next_nt_span);
-		bool is_config_valid(vector<RuleSrcUnit> &rule_src,string &config);
 
 	public:
         bool valid_flag;

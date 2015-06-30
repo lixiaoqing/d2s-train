@@ -358,8 +358,6 @@ void TreeStrPair::extract_head_mod_rule(SyntaxNode &node)
 
 void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> &rule_src,Span rule_span,string &config)
 {
-	if (is_config_valid(rule_src,config) == false)
-		return;
 	string rule_src_str;
 	vector<vector<Span> > nt_spans_vec;										//记录每个源端非终结符在目标端对应的扩展后的span
     vector<string> src_nt_str_vec;                                          //记录每个源端非终结符
@@ -447,16 +445,6 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
         TrimLine(tgt_nt_idx_to_src_nt_idx_str);
 		node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str+" ||| "+config] = make_pair(lex_weight_backward,lex_weight_forward);
 	}
-}
-
-bool TreeStrPair::is_config_valid(vector<RuleSrcUnit> &rule_src,string &config)
-{
-    for (auto &unit : rule_src)
-    {
-        if (unit.type == 2 && config[2] == 'g' && open_tags.find(unit.tag) == open_tags.end())
-            return false;
-    }
-    return true;
 }
 
 vector<vector<int> > TreeStrPair::get_tgt_replacement_status(vector<vector<Span> > &nt_spans_vec,Span rule_span)
