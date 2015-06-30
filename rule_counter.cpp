@@ -77,7 +77,7 @@ void RuleCounter::dump_rules()
 		}
 		vector <string> src_word_vec = Split(rule_src);
 		vector <int> src_id_vec;
-		for (const auto &src_word : src_word_vec)
+		for (auto &src_word : src_word_vec)
 		{
 			auto it = src_vocab.find(src_word);
 			if (it != src_vocab.end())
@@ -94,8 +94,12 @@ void RuleCounter::dump_rules()
 		}
 		vector <string> tgt_word_vec = Split(rule_tgt);
 		vector <int> tgt_id_vec;
-		for (const auto &tgt_word : tgt_word_vec)
+		for (auto &tgt_word : tgt_word_vec)
 		{
+            if (tgt_word.find("[x]") != string::npos)
+            {
+                tgt_word = "[x]";
+            }
 			auto it = tgt_vocab.find(tgt_word);
 			if (it != tgt_vocab.end())
 			{

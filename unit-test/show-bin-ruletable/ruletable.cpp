@@ -48,6 +48,9 @@ void RuleTable::load_rule_table(const string &rule_table_file)
         for (auto p : tgt_rule.probs)
             cout<<p<<' ';
         cout<<endl;
+
+        int rule_type_id;
+		fin.read((char*)&rule_type_id,sizeof(int));
 	}
 	fin.close();
 	cout<<"load rule table file "<<rule_table_file<<" over\n";

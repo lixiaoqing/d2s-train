@@ -362,6 +362,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 		return;
 	string rule_src_str;
 	vector<vector<Span> > nt_spans_vec;										//记录每个源端非终结符在目标端对应的扩展后的span
+    vector<string> src_nt_str_vec;                                          //记录每个源端非终结符
 	double lex_weight_backward = 1.0;
 	for (auto &unit : rule_src)
 	{
@@ -370,6 +371,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 			if (config[2] == 'g' && open_tags.find(unit.tag) != open_tags.end() )
 			{
 				rule_src_str += "[x]"+unit.tag+" ";
+                src_nt_str_vec.push_back("[x]"+unit.tag);
 				nt_spans_vec.push_back(expand_tgt_span(unit.tgt_span,rule_span) );
 			}
 			else
@@ -383,10 +385,12 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 			if (config[1] == 'g')
 			{
 				rule_src_str += "[x]"+unit.tag+" ";
+                src_nt_str_vec.push_back("[x]"+unit.tag);
 			}
 			else
 			{
 				rule_src_str += "[x]"+unit.word+" ";
+                src_nt_str_vec.push_back("[x]"+unit.word);
 			}
 			nt_spans_vec.push_back(expand_tgt_span(unit.tgt_span,rule_span) );
 		}
@@ -395,6 +399,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 			if (config[0] == 'g' && unit.tgt_span.first != -1)				//对空的中心词不泛化
 			{
 				rule_src_str += "[x]"+unit.tag+" ";
+                src_nt_str_vec.push_back("[x]"+unit.tag);
 				nt_spans_vec.push_back(expand_tgt_span(unit.tgt_span,rule_span) );
 			}
 			else
@@ -425,7 +430,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 			{
 				int src_nt_idx = tgt_replacement_status.at(i);
 				tgt_nt_idx_to_src_nt_idx.push_back(src_nt_idx);
-				rule_tgt_str += "[x] ";
+				rule_tgt_str += src_nt_str_vec.at(src_nt_idx)+" ";                      //计算逆向翻译概率时用，不必包含在最终保存的规则中
 				while(i<=tgt_span_end && tgt_replacement_status.at(i) == src_nt_idx)
 				{
 					i++;
