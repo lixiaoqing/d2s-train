@@ -344,87 +344,67 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 
 void TreeStrPair::extract_head_mod_rule(SyntaxNode &node)
 {
-	vector<RuleSrcUnit> rule_src;
-	for (auto child_idx : node.children)
-	{
-		auto &child = src_nodes.at(child_idx);
-		if (child.children.empty())
-		{
-			RuleSrcUnit unit = {2,child.word,child.tag,child.idx,child.tgt_span};
-			rule_src.push_back(unit);
-		}
-		else
-		{
-			RuleSrcUnit unit = {1,child.word,child.tag,child.idx,child.tgt_span};
-			rule_src.push_back(unit);
-		}
-	}
-	RuleSrcUnit unit = {0,node.word,node.tag,node.idx,src_span_to_tgt_span[node.idx][0]};
-	rule_src.push_back(unit);
-
 	vector<Span> rule_spans = expand_tgt_span(node.tgt_span,make_pair(0,tgt_sen_len-1));
 	for (auto rule_span : rule_spans)
 	{
 		vector<string> configs = {"lll","llg","lgl","gll","lgg","glg","ggl","ggg"};
 		for (string &config : configs)
 		{
-			generalize_head_mod_rule(node,rule_src,rule_span,config);
+			generalize_head_mod_rule(node,rule_span,config);
 		}
 	}
 }
 
-void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> &rule_src,Span rule_span,string &config)
+void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,Span rule_span,string &config)
 {
 	string rule_src_str;
 	vector<vector<Span> > nt_spans_vec;										//记录每个源端非终结符在目标端对应的扩展后的span
     vector<string> src_nt_str_vec;                                          //记录每个源端非终结符
 	double lex_weight_backward = 1.0;
-	for (auto &unit : rule_src)
+	for (int child_idx : node.children)
 	{
-		if (unit.type == 2)													//叶节点
+        SyntaxNode &child = src_nodes.at(child_idx);
+		if (child.children.empty())													//叶节点
 		{
-			if (config[2] == 'g' && open_tags.find(unit.tag) != open_tags.end() && unit.tgt_span.first != -1 )  //对空的叶节点不泛化
-			//if (config[2] == 'g' && open_tags.find(unit.tag) != open_tags.end() )
+			if (config[2] == 'g' && open_tags.find(child.tag) != open_tags.end() && child.tgt_span.first != -1 )  //对空的叶节点不泛化
 			{
-				rule_src_str += "[x]"+unit.tag+" ";
-                src_nt_str_vec.push_back("[x]"+unit.tag);
-				nt_spans_vec.push_back(expand_tgt_span(unit.tgt_span,rule_span) );
+				rule_src_str += "[x]"+child.tag+" ";
+                src_nt_str_vec.push_back("[x]"+child.tag);
+				nt_spans_vec.push_back(expand_tgt_span(child.tgt_span,rule_span) );
 			}
 			else
 			{
-				rule_src_str += unit.word + " ";
-				lex_weight_backward *= lex_weight_t2s.at(unit.idx);
+				rule_src_str += child.word + " ";
+				lex_weight_backward *= lex_weight_t2s.at(child.idx);
 			}
 		}
-		else if (unit.type == 1)											//内部节点
+		else	                            										//内部节点
 		{
 			if (config[1] == 'g')
 			{
-				rule_src_str += "[x]"+unit.tag+" ";
-                src_nt_str_vec.push_back("[x]"+unit.tag);
+				rule_src_str += "[x]"+child.tag+" ";
+                src_nt_str_vec.push_back("[x]"+child.tag);
 			}
 			else
 			{
-				rule_src_str += "[x]"+unit.word+" ";
-                src_nt_str_vec.push_back("[x]"+unit.word);
+				rule_src_str += "[x]"+child.word+" ";
+                src_nt_str_vec.push_back("[x]"+child.word);
 			}
-			nt_spans_vec.push_back(expand_tgt_span(unit.tgt_span,rule_span) );
-		}
-		else if (unit.type == 0)											//中心词节点
-		{
-			if (config[0] == 'g' && unit.tgt_span.first != -1)				//对空的中心词不泛化
-			{
-				rule_src_str += "[x]"+unit.tag+" ";
-                src_nt_str_vec.push_back("[x]"+unit.tag);
-				nt_spans_vec.push_back(expand_tgt_span(unit.tgt_span,rule_span) );
-			}
-			else
-			{
-				rule_src_str += unit.word+" ";
-				lex_weight_backward *= lex_weight_t2s.at(unit.idx);
-			}
+			nt_spans_vec.push_back(expand_tgt_span(child.tgt_span,rule_span) );
 		}
 	}
+    Span head_span = src_span_to_tgt_span[node.idx][0];
+    if (config[0] == 'g' && head_span.first != -1)				//对空的中心词不泛化
+    {
+        rule_src_str += "[x]"+node.tag+" ";
+        src_nt_str_vec.push_back("[x]"+node.tag);
+        nt_spans_vec.push_back(expand_tgt_span(head_span,rule_span) );
+    }
+    else
+    {
+        rule_src_str += node.word+" ";
+        lex_weight_backward *= lex_weight_t2s.at(node.idx);
+    }
     //cout<<"generalize rule src over\n";
 
 	vector<vector<int> > tgt_replacement_status_vec = get_tgt_replacement_status(nt_spans_vec,rule_span);

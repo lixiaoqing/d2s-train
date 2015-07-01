@@ -30,15 +30,6 @@ struct SyntaxNode
 	}
 };
 
-struct RuleSrcUnit
-{
-	int type;
-	string word;
-	string tag;
-	int idx;
-	Span tgt_span;
-};
-
 class TreeStrPair
 {
 	public:
@@ -57,7 +48,7 @@ class TreeStrPair
 		void extract_head_rule(SyntaxNode &node);
 		void extract_head_mod_rule(SyntaxNode &node);
 		vector<Span> expand_tgt_span(Span tgt_span,Span bound);
-		void generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> &rule_src,Span expanded_tgt_span,string &config);
+		void generalize_head_mod_rule(SyntaxNode &node,Span expanded_tgt_span,string &config);
 		vector<vector<int> > get_tgt_replacement_status(vector<vector<Span> > &nt_spans_vec,Span rule_span);
 		bool is_nt_span_combination_valid(vector<Span> &partial_combination, Span next_nt_span);
 
