@@ -235,6 +235,7 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 		if (src_idx_to_tgt_idx.at(node.idx).empty())					 // 允许head-rule中的源端以及head-modifer-rule中的中心词对空
 		{
 			node.lex_align_consistent = true;
+			node.subtree_align_consistent = true;                        // 允许head-modifer-rule中的叶节点对空
 		}
 		return;
 	}
@@ -246,15 +247,31 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 	auto &last_child = src_nodes.at(node.children.back());
     //首先合并第一个和最后一个孩子的源端span，然后与当前节点的源端span合并
 	node.src_span = merge_span(merge_span(first_child.src_span,last_child.src_span),make_pair(node.idx,0));
-	node.tgt_span = src_span_to_tgt_span[node.src_span.first][node.src_span.second];
+	//node.tgt_span = src_span_to_tgt_span[node.src_span.first][node.src_span.second];
+    node.tgt_span = make_pair(-1,-1);
+    if (src_span_to_alignment_agreement_flag[node.idx][0] == true)
+    {
+        node.tgt_span = src_span_to_tgt_span[node.idx][0];
+    }
+    for (int child_idx : node.children)
+    {
+        if ( !src_nodes.at(child_idx).children.empty() || src_nodes.at(child_idx).lex_align_consistent == true)
+        {
+            node.tgt_span = merge_span(node.tgt_span,src_nodes.at(child_idx).tgt_span);
+        }
+    }
+    /*
+    */
 	if (src_span_to_alignment_agreement_flag[node.idx][0] == true || src_idx_to_tgt_idx.at(node.idx).empty())
 	{
 		node.lex_align_consistent = true; 							// 允许head-rule中的源端以及head-modifer-rule中的中心词对空
 	}
-	if (src_span_to_alignment_agreement_flag[node.src_span.first][node.src_span.second] == true)
+	//if (src_span_to_alignment_agreement_flag[node.src_span.first][node.src_span.second] == true)
+	if (node.tgt_span.first != -1)
 	{
 		node.subtree_align_consistent = true;
 	}
+    //cout<<node.word<<' '<<node.tgt_span.first<<' '<<node.tgt_span.second<<endl;
 }
 
 /**************************************************************************************
@@ -366,7 +383,8 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 	{
 		if (unit.type == 2)													//叶节点
 		{
-			if (config[2] == 'g' && open_tags.find(unit.tag) != open_tags.end() )
+			if (config[2] == 'g' && open_tags.find(unit.tag) != open_tags.end() && unit.tgt_span.first != -1 )  //对空的叶节点不泛化
+			//if (config[2] == 'g' && open_tags.find(unit.tag) != open_tags.end() )
 			{
 				rule_src_str += "[x]"+unit.tag+" ";
                 src_nt_str_vec.push_back("[x]"+unit.tag);
@@ -407,8 +425,10 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 			}
 		}
 	}
+    //cout<<"generalize rule src over\n";
 
 	vector<vector<int> > tgt_replacement_status_vec = get_tgt_replacement_status(nt_spans_vec,rule_span);
+    //cout<<"get tgt replacement status over\n";
 	for (auto &tgt_replacement_status : tgt_replacement_status_vec)
 	{
 		string rule_tgt_str;
@@ -435,7 +455,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
 				}
 			}
 		}
-		string tgt_nt_idx_to_src_nt_idx_str = to_string(nt_spans_vec.size())+" ";
+		string tgt_nt_idx_to_src_nt_idx_str = to_string(tgt_nt_idx_to_src_nt_idx.size())+" ";       //注意目标端变量个数可能小于源端
 		for (int src_nt_idx : tgt_nt_idx_to_src_nt_idx)
 		{
 			tgt_nt_idx_to_src_nt_idx_str += to_string(src_nt_idx)+" ";
@@ -443,7 +463,10 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,vector<RuleSrcUnit> 
         TrimLine(rule_src_str);
         TrimLine(rule_tgt_str);
         TrimLine(tgt_nt_idx_to_src_nt_idx_str);
-		node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str+" ||| "+config] = make_pair(lex_weight_backward,lex_weight_forward);
+        if (rule_tgt_str.size() > 0)
+        {
+            node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str+" ||| "+config] = make_pair(lex_weight_backward,lex_weight_forward);
+        }
 	}
 }
 
@@ -496,8 +519,12 @@ vector<vector<int> > TreeStrPair::get_tgt_replacement_status(vector<vector<Span>
 
 bool TreeStrPair::is_nt_span_combination_valid(vector<Span> &partial_combination, Span next_nt_span)
 {
+    if (next_nt_span.first == -1)
+        return true;
 	for (auto &nt_span : partial_combination)
 	{
+        if (nt_span.first == -1)
+            continue;
 		if (nt_span.first == next_nt_span.first)            //只有依存树不满足投射性时才会出现这种情况
             return false;
 		if (nt_span.first < next_nt_span.first && nt_span.first+nt_span.second >= next_nt_span.first)
