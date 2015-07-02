@@ -227,27 +227,31 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 	{
 		node.src_span = make_pair(node.idx,0);
 		node.tgt_span = src_span_to_tgt_span[node.idx][0];
-		if (src_span_to_alignment_agreement_flag[node.idx][0] == true)
-		{
-			node.lex_align_consistent = true;
-			node.subtree_align_consistent = true;
-		}
-		if (src_idx_to_tgt_idx.at(node.idx).empty())					 // 允许head-rule中的源端以及head-modifer-rule中的中心词对空
-		{
-			node.lex_align_consistent = true;
-			node.subtree_align_consistent = true;                        // 允许head-modifer-rule中的叶节点对空
-		}
+        if (src_span_to_alignment_agreement_flag[node.idx][0] == true || src_idx_to_tgt_idx.at(node.idx).empty())
+        {
+            node.lex_align_consistent = true;
+            node.subtree_align_consistent = true;
+        }
 		return;
 	}
 	for (int child_idx : node.children)
 	{
 		cal_span_for_each_node(child_idx);
 	}
+    if (src_span_to_alignment_agreement_flag[node.idx][0] == true || src_idx_to_tgt_idx.at(node.idx).empty())
+    {
+        node.lex_align_consistent = true;
+    }
 	auto &first_child = src_nodes.at(node.children.front());
 	auto &last_child = src_nodes.at(node.children.back());
     //首先合并第一个和最后一个孩子的源端span，然后与当前节点的源端span合并
 	node.src_span = merge_span(merge_span(first_child.src_span,last_child.src_span),make_pair(node.idx,0));
-	//node.tgt_span = src_span_to_tgt_span[node.src_span.first][node.src_span.second];
+	node.tgt_span = src_span_to_tgt_span[node.src_span.first][node.src_span.second];
+	if (src_span_to_alignment_agreement_flag[node.src_span.first][node.src_span.second] == true)
+	{
+		node.subtree_align_consistent = true;
+	}
+    /*
     node.tgt_span = make_pair(-1,-1);
     if (src_span_to_alignment_agreement_flag[node.idx][0] == true)
     {
@@ -260,18 +264,11 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
             node.tgt_span = merge_span(node.tgt_span,src_nodes.at(child_idx).tgt_span);
         }
     }
-    /*
-    */
-	if (src_span_to_alignment_agreement_flag[node.idx][0] == true || src_idx_to_tgt_idx.at(node.idx).empty())
-	{
-		node.lex_align_consistent = true; 							// 允许head-rule中的源端以及head-modifer-rule中的中心词对空
-	}
-	//if (src_span_to_alignment_agreement_flag[node.src_span.first][node.src_span.second] == true)
 	if (node.tgt_span.first != -1)
 	{
 		node.subtree_align_consistent = true;
 	}
-    //cout<<node.word<<' '<<node.tgt_span.first<<' '<<node.tgt_span.second<<endl;
+    */
 }
 
 /**************************************************************************************
@@ -284,34 +281,24 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
 void TreeStrPair::extract_rules(int sub_root_idx)
 {
 	auto &node = src_nodes.at(sub_root_idx);
+    if (node.lex_align_consistent == true)
+    {
+        extract_head_rule(node);
+    }
 	if (node.children.empty() )                                           // 叶节点
-	{
-		if (node.lex_align_consistent == true)
-		{
-			extract_head_rule(node);
-		}
 		return;
-	}
 	for (int child_idx : node.children)
 	{
 		extract_rules(child_idx);
 	}
 	if (node.lex_align_consistent == true)
 	{
-		extract_head_rule(node);
-		bool flag = true;
 		for (int child_idx : node.children)
 		{
 			if (src_nodes.at(child_idx).subtree_align_consistent == false)
-			{
-				flag = false;
-				break;
-			}
+                return;
 		}
-		if (flag == true)
-		{
-			extract_head_mod_rule(node);
-		}
+        extract_head_mod_rule(node);
 	}
 }
 
