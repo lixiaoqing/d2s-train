@@ -324,7 +324,7 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 		string rule_tgt = "NULL";
 		double lex_weight_forward = (*plex_t2s)["NULL "+node.word];
 		string tgt_nt_idx_to_src_nt_idx = "0";
-		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx+" ||| lll"] = make_pair(lex_weight_backward,lex_weight_forward);
+		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx+" ||| lll ||| 0"] = make_pair(lex_weight_backward,lex_weight_forward);
 		return;
 	}
 	vector<Span> rule_spans = expand_tgt_span(src_span_to_tgt_span[node.idx][0],make_pair(0,tgt_sen_len-1));
@@ -338,7 +338,7 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 			lex_weight_forward *= lex_weight_s2t.at(i);
 		}
 		string tgt_nt_idx_to_src_nt_idx = "0";
-		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx+" ||| lll"] = make_pair(lex_weight_backward,lex_weight_forward);
+		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx+" ||| lll ||| 0"] = make_pair(lex_weight_backward,lex_weight_forward);
 	}
 }
 
@@ -361,8 +361,13 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,Span rule_span,strin
 	vector<vector<Span> > nt_spans_vec;										//记录每个源端非终结符在目标端对应的扩展后的span
     vector<string> src_nt_str_vec;                                          //记录每个源端非终结符
 	double lex_weight_backward = 1.0;
+    int head_rel_pos = 0;                                                   //记录中心词节点在规则中的相对位置，用中心词左右的孩子数表示
 	for (int child_idx : node.children)
 	{
+        if (child_idx < node.idx)
+        {
+            head_rel_pos++;
+        }
         SyntaxNode &child = src_nodes.at(child_idx);
 		if (child.children.empty())													//叶节点
 		{
@@ -405,10 +410,8 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,Span rule_span,strin
         rule_src_str += node.word+" ";
         lex_weight_backward *= lex_weight_t2s.at(node.idx);
     }
-    //cout<<"generalize rule src over\n";
 
 	vector<vector<int> > tgt_replacement_status_vec = get_tgt_replacement_status(nt_spans_vec,rule_span);
-    //cout<<"get tgt replacement status over\n";
 	for (auto &tgt_replacement_status : tgt_replacement_status_vec)
 	{
 		string rule_tgt_str;
@@ -445,7 +448,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,Span rule_span,strin
         TrimLine(tgt_nt_idx_to_src_nt_idx_str);
         if (rule_tgt_str.size() > 0)
         {
-            node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str+" ||| "+config] = make_pair(lex_weight_backward,lex_weight_forward);
+            node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str+" ||| "+config+" ||| "+to_string(head_rel_pos)] = make_pair(lex_weight_backward,lex_weight_forward);
         }
 	}
 }
