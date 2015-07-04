@@ -430,7 +430,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,Span rule_span,strin
         TrimLine(tgt_nt_idx_to_src_nt_idx_str);
         if (rule_tgt_str.size() > 0)
         {
-            node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str+" ||| "+config] = make_pair(lex_weight_backward,lex_weight_forward);
+            node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str] = make_pair(lex_weight_backward,lex_weight_forward);
         }
 	}
 }
