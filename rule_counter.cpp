@@ -10,7 +10,6 @@ void RuleCounter::update(Rule &rule)
 	string rule_tgt = vs[1];
 	string tgt_nt_idx_to_src_nt_idx = vs[2];
     string rule_type = vs[3];
-    string head_rel_pos = vs[4];
     auto it1 = rule2count_and_accumulate_lex_weight.find(rule_str);
     if (it1 != rule2count_and_accumulate_lex_weight.end())
     {
@@ -23,14 +22,14 @@ void RuleCounter::update(Rule &rule)
         rule2count_and_accumulate_lex_weight[rule_str] = {1,lex_weight_t2s,lex_weight_s2t};
     }
 
-    auto it2 = rule_src2count.find(rule_src+" ||| "+rule_type+" ||| "+head_rel_pos);
+    auto it2 = rule_src2count.find(rule_src+" ||| "+rule_type);
     if (it2 != rule_src2count.end())
     {
         it2->second += 1;
     }
     else
     {
-        rule_src2count[rule_src+" ||| "+rule_type+" ||| "+head_rel_pos] = 1;
+        rule_src2count[rule_src+" ||| "+rule_type] = 1;
     }
 
     auto it3 = rule_tgt2count.find(rule_tgt+" ||| "+rule_type);
@@ -72,7 +71,6 @@ void RuleCounter::dump_rules()
 		vector<string> nt_align = Split(vs[2]);
 		vector<int> tgt_nt_idx_to_src_nt_idx;
         string rule_type = vs[3];
-        string head_rel_pos = vs[4];
 		for (auto &e : nt_align)
 		{
 			tgt_nt_idx_to_src_nt_idx.push_back(stoi(e));
@@ -120,10 +118,9 @@ void RuleCounter::dump_rules()
         double lex_weight_t2s = d2log(kvp.second.acc_lex_weight_t2s/rule_count);
         double lex_weight_s2t = d2log(kvp.second.acc_lex_weight_s2t/rule_count);
         double trans_prob_t2s = d2log(rule_count/rule_tgt2count[rule_tgt+" ||| "+rule_type]);
-        double trans_prob_s2t = d2log(rule_count/rule_src2count[rule_src+" ||| "+rule_type+" ||| "+head_rel_pos]);
+        double trans_prob_s2t = d2log(rule_count/rule_src2count[rule_src+" ||| "+rule_type]);
         vector<double> prob_vec = {trans_prob_t2s,trans_prob_s2t,lex_weight_t2s,lex_weight_s2t};
         int rule_type_id = type2id[rule_type];
-        int pos = stoi(head_rel_pos);
 		int src_rule_len = src_id_vec.size();
 		int tgt_rule_len = tgt_id_vec.size();
 		fout.write((char*)&src_rule_len,sizeof(int));
@@ -133,7 +130,6 @@ void RuleCounter::dump_rules()
 		fout.write((char*)&tgt_nt_idx_to_src_nt_idx[0],sizeof(int)*tgt_nt_idx_to_src_nt_idx.size());
 		fout.write((char*)&prob_vec[0],sizeof(double)*prob_vec.size());
 		fout.write((char*)&rule_type_id,sizeof(int));
-		fout.write((char*)&pos,sizeof(int));
         //cout<<rule<<" ||| "<<trans_prob_t2s<<" "<<trans_prob_s2t<<" "<<lex_weight_t2s<<" "<<lex_weight_s2t<<endl;
     }
     cout<<num<<endl;
