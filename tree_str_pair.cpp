@@ -307,7 +307,7 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 		string rule_tgt = "NULL";
 		double lex_weight_forward = (*plex_t2s)["NULL "+node.word];
 		string tgt_nt_idx_to_src_nt_idx = "0";
-		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = make_pair(lex_weight_backward,lex_weight_forward);
+		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = {lex_weight_backward,lex_weight_forward,1.0};
 		return;
 	}
 	vector<Span> rule_spans = expand_tgt_span(src_span_to_tgt_span[node.idx][0],make_pair(0,tgt_sen_len-1));
@@ -321,7 +321,7 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 			lex_weight_forward *= lex_weight_s2t.at(i);
 		}
 		string tgt_nt_idx_to_src_nt_idx = "0";
-		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = make_pair(lex_weight_backward,lex_weight_forward);
+		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = {lex_weight_backward,lex_weight_forward,1.0/rule_spans.size()};
 	}
 }
 
@@ -333,12 +333,12 @@ void TreeStrPair::extract_head_mod_rule(SyntaxNode &node)
 		vector<string> configs = {"lll","llg","lgl","gll","lgg","glg","ggl","ggg"};
 		for (string &config : configs)
 		{
-			generalize_head_mod_rule(node,rule_span,config);
+			generalize_head_mod_rule(node,rule_span,config,rule_spans.size());
 		}
 	}
 }
 
-void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,Span rule_span,string &config)
+void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,Span rule_span,string &config,int tgt_span_num)
 {
 	string rule_src_str;
 	vector<vector<Span> > nt_spans_vec;										//记录每个源端非终结符在目标端对应的扩展后的span
@@ -390,6 +390,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,Span rule_span,strin
     }
 
 	vector<vector<int> > tgt_replacement_status_vec = get_tgt_replacement_status(nt_spans_vec,rule_span);
+    double n = tgt_span_num*tgt_replacement_status_vec.size();
 	for (auto &tgt_replacement_status : tgt_replacement_status_vec)
 	{
 		string rule_tgt_str;
@@ -427,7 +428,7 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,Span rule_span,strin
         TrimLine(tgt_nt_idx_to_src_nt_idx_str);
         if (rule_tgt_str.size() > 0)
         {
-            node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str] = make_pair(lex_weight_backward,lex_weight_forward);
+            node.rules[rule_src_str+" ||| "+rule_tgt_str+" ||| "+tgt_nt_idx_to_src_nt_idx_str] = {lex_weight_backward,lex_weight_forward,1.0/n};
         }
 	}
 }
@@ -504,7 +505,7 @@ void TreeStrPair::dump_rules(int sub_root_idx,vector<Rule> &rule_collector)
 	{
 		for (auto &kvp : node.rules)
 		{
-			rule_collector.push_back({kvp.first,kvp.second.first,kvp.second.second});
+			rule_collector.push_back({kvp.first,kvp.second[0],kvp.second[1],kvp.second[2]});
 		}
 		return;
 	}
@@ -514,7 +515,7 @@ void TreeStrPair::dump_rules(int sub_root_idx,vector<Rule> &rule_collector)
 	}
 	for (auto &kvp : node.rules)
 	{
-		rule_collector.push_back({kvp.first,kvp.second.first,kvp.second.second});
+        rule_collector.push_back({kvp.first,kvp.second[0],kvp.second[1],kvp.second[2]});
 	}
 }
 

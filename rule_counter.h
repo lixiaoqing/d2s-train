@@ -8,11 +8,12 @@ struct Rule
 	string rule_str;
 	double lex_weight_backward;
 	double lex_weight_forward;
+    double frac_count;
 };
 
 struct CountAndLexWeight
 {
-    int count;
+    double count;
     double acc_lex_weight_t2s;
     double acc_lex_weight_s2t;
 };
@@ -25,8 +26,8 @@ class RuleCounter
 
     private:
         map<string,CountAndLexWeight> rule2count_and_accumulate_lex_weight;
-        map<string,int> rule_src2count;
-        map<string,int> rule_tgt2count;
+        map<string,double> rule_src2count;
+        map<string,double> rule_tgt2count;
 };
 
 #endif

@@ -5,6 +5,7 @@ void RuleCounter::update(Rule &rule)
 	string rule_str = rule.rule_str;
 	double lex_weight_t2s = rule.lex_weight_backward;
 	double lex_weight_s2t = rule.lex_weight_forward;
+    double frac_count = rule.frac_count;
 	vector<string> vs = Split(rule_str," ||| ");
 	string rule_src = vs[0];
 	string rule_tgt = vs[1];
@@ -12,33 +13,33 @@ void RuleCounter::update(Rule &rule)
     auto it1 = rule2count_and_accumulate_lex_weight.find(rule_str);
     if (it1 != rule2count_and_accumulate_lex_weight.end())
     {
-        it1->second.count += 1;
+        it1->second.count += frac_count;
         it1->second.acc_lex_weight_t2s += lex_weight_t2s;
         it1->second.acc_lex_weight_s2t += lex_weight_s2t;
     }
     else
     {
-        rule2count_and_accumulate_lex_weight[rule_str] = {1,lex_weight_t2s,lex_weight_s2t};
+        rule2count_and_accumulate_lex_weight[rule_str] = {frac_count,lex_weight_t2s,lex_weight_s2t};
     }
 
     auto it2 = rule_src2count.find(rule_src);
     if (it2 != rule_src2count.end())
     {
-        it2->second += 1;
+        it2->second += frac_count;
     }
     else
     {
-        rule_src2count[rule_src] = 1;
+        rule_src2count[rule_src] = frac_count;
     }
 
     auto it3 = rule_tgt2count.find(rule_tgt);
     if (it3 != rule_tgt2count.end())
     {
-        it3->second += 1;
+        it3->second += frac_count;
     }
     else
     {
-        rule_tgt2count[rule_tgt] = 1;
+        rule_tgt2count[rule_tgt] = frac_count;
     }
 }
 
@@ -112,7 +113,7 @@ void RuleCounter::dump_rules()
 			}
 		}
 
-        double rule_count = (double)kvp.second.count;
+        double rule_count = kvp.second.count;
         double lex_weight_t2s = d2log(kvp.second.acc_lex_weight_t2s/rule_count);
         double lex_weight_s2t = d2log(kvp.second.acc_lex_weight_s2t/rule_count);
         double trans_prob_t2s = d2log(rule_count/rule_tgt2count[rule_tgt]);

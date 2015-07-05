@@ -15,7 +15,7 @@ struct SyntaxNode
 	vector<int> children;							// 该节点的孩子节点在句子中的位置
 	Span src_span;                         			// 该节点对应的源端span,用起始位置和跨度长度表示
 	Span tgt_span;                         			// 该节点对应的目标端span
-	map<string,pair<double,double> > rules;			// 该节点所有规则的字符串形式
+	map<string,vector<double> > rules;			    // 该节点所有规则的字符串形式
 	bool lex_align_consistent;						// 该节点单词是否满足对齐一致性
 	bool subtree_align_consistent;					// 该节点对应的子树是否满足对齐一致性
 	
@@ -48,7 +48,7 @@ class TreeStrPair
 		void extract_head_rule(SyntaxNode &node);
 		void extract_head_mod_rule(SyntaxNode &node);
 		vector<Span> expand_tgt_span(Span tgt_span,Span bound);
-		void generalize_head_mod_rule(SyntaxNode &node,Span expanded_tgt_span,string &config);
+		void generalize_head_mod_rule(SyntaxNode &node,Span expanded_tgt_span,string &config,int tgt_span_num);
 		vector<vector<int> > get_tgt_replacement_status(vector<vector<Span> > &nt_spans_vec,Span rule_span);
 		bool is_nt_span_combination_valid(vector<Span> &partial_combination, Span next_nt_span);
 
