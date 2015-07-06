@@ -25,9 +25,9 @@ class RuleCounter
         void dump_rules();
 
     private:
-        map<string,CountAndLexWeight> rule2count_and_accumulate_lex_weight;
-        map<string,double> rule_src2count;
-        map<string,double> rule_tgt2count;
+        unordered_map<string,CountAndLexWeight> rule2count_and_accumulate_lex_weight;
+        unordered_map<string,double> rule_src2count;
+        unordered_map<string,double> rule_tgt2count;
 };
 
 #endif

@@ -2,7 +2,7 @@
 #include "myutils.h"
 #include "tree_str_pair.h"
 
-void load_lex_trans_table(map<string,double> &lex_trans_table,string lex_trans_file)
+void load_lex_trans_table(unordered_map<string,double> &lex_trans_table,string lex_trans_file)
 {
 	ifstream fin(lex_trans_file.c_str());
     string line;
@@ -25,8 +25,8 @@ int main(int argc, char* argv[])
 	load_data_into_blocks(line_tree_vecs,ft,block_size);
 	load_data_into_blocks(line_str_vecs,fs,block_size);
 	load_data_into_blocks(line_align_vecs,fa,block_size);
-	map<string,double> lex_s2t;
-	map<string,double> lex_t2s;
+	unordered_map<string,double> lex_s2t;
+	unordered_map<string,double> lex_t2s;
     load_lex_trans_table(lex_s2t,argv[4]);
     load_lex_trans_table(lex_t2s,argv[5]);
     RuleCounter rule_counter;

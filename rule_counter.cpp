@@ -45,7 +45,7 @@ void RuleCounter::update(Rule &rule)
 
 void RuleCounter::dump_rules()
 {
-    map<string,int> type2id = {{"lll",0},{"gll",1},{"lgl",2},{"llg",3},{"lgg",4},{"glg",5},{"ggl",6},{"ggg",7}};
+    unordered_map<string,int> type2id = {{"lll",0},{"gll",1},{"lgl",2},{"llg",3},{"lgg",4},{"glg",5},{"ggl",6},{"ggg",7}};
 	unordered_map <string,int> src_vocab;
 	unordered_map <string,int> tgt_vocab;
 	vector<string> src_vocab_vec;

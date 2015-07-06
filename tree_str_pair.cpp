@@ -1,6 +1,6 @@
 #include "tree_str_pair.h"
 
-TreeStrPair::TreeStrPair(string &line_tree,string &line_str,string &line_align,map<string,double> *lex_s2t,map<string,double> *lex_t2s)
+TreeStrPair::TreeStrPair(string &line_tree,string &line_str,string &line_align,unordered_map<string,double> *lex_s2t,unordered_map<string,double> *lex_t2s)
 {
     valid_flag = true;
     TrimLine(line_tree);
