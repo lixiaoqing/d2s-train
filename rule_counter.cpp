@@ -3,9 +3,9 @@
 void RuleCounter::update(Rule &rule)
 {
 	string rule_str = rule.rule_str;
-	double lex_weight_t2s = rule.lex_weight_backward;
-	double lex_weight_s2t = rule.lex_weight_forward;
     double frac_count = rule.frac_count;
+	double lex_weight_t2s = rule.lex_weight_backward*frac_count;
+	double lex_weight_s2t = rule.lex_weight_forward*frac_count;
 	vector<string> vs = Split(rule_str," ||| ");
 	string rule_src = vs[0];
 	string rule_tgt = vs[1];
