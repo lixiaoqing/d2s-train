@@ -273,36 +273,49 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
  3. 出口参数: 无
  4. 算法简介: 1) 后序遍历当前子树
  			  2) 根据子节点与根节点的对齐一致性判断是否能抽取规则
+              假设当前节点为H，它有三个子节点A,B,C，那么head规则关心H如何翻译，
+              head-modifer规则关心整个结构 (A B C) H 如何和翻译和调序，
+              fixed-struct规则关心包含中心词的部分结构，如 (A B) H，如何翻译和调序，
+              float-struct规则关心不含中心词的部分结构，如 (A B) 如何翻译和调序
 ************************************************************************************* */
 void TreeStrPair::extract_rules(int sub_root_idx)
 {
 	auto &node = src_nodes.at(sub_root_idx);
     if (node.lex_align_consistent == true)
     {
-        extract_head_rule(node);
+        extract_head_rule(node);                                        // 抽取head规则
     }
-	if (node.children.empty() )                                           // 叶节点
+	if (node.children.empty() )                                         // 叶节点只有head规则
 		return;
 	for (int child_idx : node.children)
 	{
 		extract_rules(child_idx);
 	}
-	if (node.lex_align_consistent == true)
-	{
-		for (int child_idx : node.children)
-		{
-			if (src_nodes.at(child_idx).subtree_align_consistent == false)
-                return;
-		}
-        extract_head_mod_rule(node);
-	}
+    int children_size = node.children.size();
+    for (int children_num=1;children_num<=children_size;children_num++)
+    {
+        for (int first_child_idx=0;first_child_idx<=children_size-children_num;first_child_idx++)
+        {
+            if (check_subtree_align_consistent(node,first_child_idx,children_num) == true)
+            {
+                if (node.lex_align_consistent == true)
+                {
+                    extract_fixed_rule(node,first_child_idx,children_num);
+                }
+                if (children_num > 1)
+                {
+                    extract_floating_rule(node,first_child_idx,children_num);
+                }
+            }
+        }
+    }
 }
 
 void TreeStrPair::extract_head_rule(SyntaxNode &node)
 {
 	string rule_src = node.word;
 	double lex_weight_backward = lex_weight_t2s.at(node.idx);
-	if (src_idx_to_tgt_idx.at(node.idx).empty())                //该节点的单词对空了
+	if (src_idx_to_tgt_idx.at(node.idx).empty())                        // 该节点的单词对空了
 	{
 		string rule_tgt = "NULL";
 		double lex_weight_forward = (*plex_t2s)["NULL "+node.word];
@@ -325,26 +338,86 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 	}
 }
 
-void TreeStrPair::extract_head_mod_rule(SyntaxNode &node)
+bool TreeStrPair::check_subtree_align_consistent(SyntaxNode &node,int first_child_idx,int children_num)
 {
-	vector<Span> rule_spans = expand_tgt_span(node.tgt_span,make_pair(0,tgt_sen_len-1));
+		for (int child_idx=first_child_idx;child_idx<children_num;child_idx++)
+		{
+            auto &child = src_nodes.at(node.children.at(child_idx));
+			if (child.subtree_align_consistent == false)
+                return false;
+		}
+        return true;
+}
+
+/**************************************************************************************
+ 1. 函数功能: 抽取当前子树中每个节点对应的fixed_struct规则，
+              注意head-modifier规则包含在fixed_struct规则中
+ 2. 入口参数: 当前子树的根节点
+ 3. 出口参数: 无
+ 4. 算法简介: 见注释
+************************************************************************************* */
+void TreeStrPair::extract_fixed_rule(SyntaxNode &node,int first_child_idx,int children_num)
+{
+	auto &first_child = src_nodes.at(node.children.at(first_child_idx));
+	auto &last_child = src_nodes.at(node.children.at(first_child_idx+children_num-1));
+    //规则源端必须连续
+    if (first_child.src_span.first-1 > node.idx || last_child.src_span.first+last_child.src_span.second+1 < node.idx)
+        return;
+    //首先合并第一个和最后一个孩子的源端span，然后与当前节点的源端span合并
+	Span src_span = merge_span(merge_span(first_child.src_span,last_child.src_span),make_pair(node.idx,0));
+    //必须满足对齐一致性
+	if (src_span_to_alignment_agreement_flag[src_span.first][src_span.second] == false)
+        return;
+	Span tgt_span = src_span_to_tgt_span[src_span.first][src_span.second];
+	vector<Span> rule_spans = expand_tgt_span(tgt_span,make_pair(0,tgt_sen_len-1));
+    vector<string> configs = {"lll","llg","lgl","gll","lgg","glg","ggl","ggg"};
 	for (auto rule_span : rule_spans)
 	{
-		vector<string> configs = {"lll","llg","lgl","gll","lgg","glg","ggl","ggg"};
 		for (string &config : configs)
 		{
-			generalize_head_mod_rule(node,rule_span,config,rule_spans.size());
+			generalize_rule(node,first_child_idx,children_num,rule_span,config,rule_spans.size(),"fixed");
 		}
 	}
 }
 
-void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,Span rule_span,string &config,int tgt_span_num)
+/**************************************************************************************
+ 1. 函数功能: 抽取当前子树中每个节点对应的float_struct规则，
+ 2. 入口参数: 当前子树的根节点
+ 3. 出口参数: 无
+ 4. 算法简介: 见注释
+************************************************************************************* */
+void TreeStrPair::extract_floating_rule(SyntaxNode &node,int first_child_idx,int children_num)
+{
+	auto &first_child = src_nodes.at(node.children.at(first_child_idx));
+	auto &last_child = src_nodes.at(node.children.at(first_child_idx+children_num-1));
+    //规则源端必须连续
+    if (first_child.idx < node.idx || last_child.idx > node.idx)
+        return;
+    //首先合并第一个和最后一个孩子的源端span，然后与当前节点的源端span合并
+	Span src_span = merge_span(first_child.src_span,last_child.src_span);
+    //必须满足对齐一致性
+	if (src_span_to_alignment_agreement_flag[src_span.first][src_span.second] == false)
+        return;
+	Span tgt_span = src_span_to_tgt_span[src_span.first][src_span.second];
+	vector<Span> rule_spans = expand_tgt_span(tgt_span,make_pair(0,tgt_sen_len-1));
+    vector<string> configs = {"lll","llg","lgl","gll","lgg","glg","ggl","ggg"};
+	for (auto rule_span : rule_spans)
+	{
+		for (string &config : configs)
+		{
+			generalize_rule(node,first_child_idx,children_num,rule_span,config,rule_spans.size(),"floating");
+		}
+	}
+}
+
+
+void TreeStrPair::generalize_rule(SyntaxNode &node,int first_child_idx,int children_num,Span rule_span,string config,int tgt_span_num,string struct_type)
 {
 	string rule_src_str;
 	vector<vector<Span> > nt_spans_vec;										//记录每个源端非终结符在目标端对应的扩展后的span
     vector<string> src_nt_str_vec;                                          //记录每个源端非终结符
 	double lex_weight_backward = 1.0;
-	for (int child_idx : node.children)
+	for (int child_idx=first_child_idx;child_idx<first_child_idx+children_num;child_idx++)
 	{
         SyntaxNode &child = src_nodes.at(child_idx);
 		if (child.children.empty())													//叶节点
@@ -376,17 +449,20 @@ void TreeStrPair::generalize_head_mod_rule(SyntaxNode &node,Span rule_span,strin
 			nt_spans_vec.push_back(expand_tgt_span(child.tgt_span,rule_span) );
 		}
 	}
-    Span head_span = src_span_to_tgt_span[node.idx][0];
-    if (config[0] == 'g' && head_span.first != -1)				//对空的中心词不泛化
+    if (struct_type == "fixed")
     {
-        rule_src_str += "[x]"+node.tag+" ";
-        src_nt_str_vec.push_back("[x]"+node.tag);
-        nt_spans_vec.push_back(expand_tgt_span(head_span,rule_span) );
-    }
-    else
-    {
-        rule_src_str += node.word+" ";
-        lex_weight_backward *= lex_weight_t2s.at(node.idx);
+        Span head_span = src_span_to_tgt_span[node.idx][0];
+        if (config[0] == 'g' && head_span.first != -1)				//对空的中心词不泛化
+        {
+            rule_src_str += "[x]"+node.tag+" ";
+            src_nt_str_vec.push_back("[x]"+node.tag);
+            nt_spans_vec.push_back(expand_tgt_span(head_span,rule_span) );
+        }
+        else
+        {
+            rule_src_str += node.word+" ";
+            lex_weight_backward *= lex_weight_t2s.at(node.idx);
+        }
     }
 
 	vector<vector<int> > tgt_replacement_status_vec = get_tgt_replacement_status(nt_spans_vec,rule_span);

@@ -45,10 +45,12 @@ class TreeStrPair
 		void check_alignment_agreement();
 		void cal_span_for_each_node(int sub_root_idx);
 		void cal_lex_weight();
+        bool check_subtree_align_consistent(SyntaxNode &node,int first_child_idx,int children_num);
 		void extract_head_rule(SyntaxNode &node);
-		void extract_head_mod_rule(SyntaxNode &node);
+		void extract_fixed_rule(SyntaxNode &node,int first_child_idx,int children_num);
+		void extract_floating_rule(SyntaxNode &node,int first_child_idx,int children_num);
+        void generalize_rule(SyntaxNode &node,int first_child_idx,int children_num,Span rule_span,string config,int tgt_span_num,string struct_type);
 		vector<Span> expand_tgt_span(Span tgt_span,Span bound);
-		void generalize_head_mod_rule(SyntaxNode &node,Span expanded_tgt_span,string &config,int tgt_span_num);
 		vector<vector<int> > get_tgt_replacement_status(vector<vector<Span> > &nt_spans_vec,Span rule_span);
 		bool is_nt_span_combination_valid(vector<Span> &partial_combination, Span next_nt_span);
 
