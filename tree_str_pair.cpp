@@ -275,8 +275,8 @@ void TreeStrPair::cal_span_for_each_node(int sub_root_idx)
  			  2) 根据子节点与根节点的对齐一致性判断是否能抽取规则
               假设当前节点为H，它有三个子节点A,B,C，那么head规则关心H如何翻译，
               head-modifer规则关心整个结构 (A B C) H 如何和翻译和调序，
-              fixed-struct规则关心包含中心词的部分结构，如 (A B) H，如何翻译和调序，
-              float-struct规则关心不含中心词的部分结构，如 (A B) 如何翻译和调序
+              fixed规则关心包含中心词的部分结构，如 (A B) H，如何翻译和调序，
+              floating规则关心不含中心词的部分结构，如 (A B) 如何翻译和调序
 ************************************************************************************* */
 void TreeStrPair::extract_rules(int sub_root_idx)
 {
@@ -381,7 +381,7 @@ void TreeStrPair::extract_fixed_rule(SyntaxNode &node,int first_child_idx,int ch
 }
 
 /**************************************************************************************
- 1. 函数功能: 抽取当前子树中每个节点对应的float_struct规则，
+ 1. 函数功能: 抽取当前子树中每个节点对应的floating规则，
  2. 入口参数: 当前子树的根节点
  3. 出口参数: 无
  4. 算法简介: 见注释
@@ -391,7 +391,7 @@ void TreeStrPair::extract_floating_rule(SyntaxNode &node,int first_child_idx,int
 	auto &first_child = src_nodes.at(node.children.at(first_child_idx));
 	auto &last_child = src_nodes.at(node.children.at(first_child_idx+children_num-1));
     //规则源端必须连续
-    if (first_child.idx < node.idx || last_child.idx > node.idx)
+    if (first_child.idx < node.idx && last_child.idx > node.idx)
         return;
     //首先合并第一个和最后一个孩子的源端span，然后与当前节点的源端span合并
 	Span src_span = merge_span(first_child.src_span,last_child.src_span);
@@ -419,7 +419,7 @@ void TreeStrPair::generalize_rule(SyntaxNode &node,int first_child_idx,int child
 	double lex_weight_backward = 1.0;
 	for (int child_idx=first_child_idx;child_idx<first_child_idx+children_num;child_idx++)
 	{
-        SyntaxNode &child = src_nodes.at(child_idx);
+        SyntaxNode &child = src_nodes.at(node.children.at(child_idx));
 		if (child.children.empty())													//叶节点
 		{
 			if (config[2] == 'g' && open_tags.find(child.tag) != open_tags.end() && child.tgt_span.first != -1 )  //对空的叶节点不泛化
