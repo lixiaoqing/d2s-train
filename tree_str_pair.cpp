@@ -340,7 +340,7 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 
 bool TreeStrPair::check_subtree_align_consistent(SyntaxNode &node,int first_child_idx,int children_num)
 {
-		for (int child_idx=first_child_idx;child_idx<children_num;child_idx++)
+		for (int child_idx=first_child_idx;child_idx<first_child_idx+children_num;child_idx++)
 		{
             auto &child = src_nodes.at(node.children.at(child_idx));
 			if (child.subtree_align_consistent == false)
@@ -393,7 +393,7 @@ void TreeStrPair::extract_floating_rule(SyntaxNode &node,int first_child_idx,int
     //规则源端必须连续
     if (first_child.idx < node.idx && last_child.idx > node.idx)
         return;
-    //首先合并第一个和最后一个孩子的源端span，然后与当前节点的源端span合并
+    //合并第一个和最后一个孩子的源端span
 	Span src_span = merge_span(first_child.src_span,last_child.src_span);
     //必须满足对齐一致性
 	if (src_span_to_alignment_agreement_flag[src_span.first][src_span.second] == false)
@@ -558,12 +558,8 @@ vector<vector<int> > TreeStrPair::get_tgt_replacement_status(vector<vector<Span>
 
 bool TreeStrPair::is_nt_span_combination_valid(vector<Span> &partial_combination, Span next_nt_span)
 {
-    if (next_nt_span.first == -1)
-        return true;
 	for (auto &nt_span : partial_combination)
 	{
-        if (nt_span.first == -1)
-            continue;
 		if (nt_span.first == next_nt_span.first)            //只有依存树不满足投射性时才会出现这种情况
             return false;
 		if (nt_span.first < next_nt_span.first && nt_span.first+nt_span.second >= next_nt_span.first)

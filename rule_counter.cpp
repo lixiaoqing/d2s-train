@@ -127,7 +127,7 @@ void RuleCounter::dump_rules()
 		fout.write((char*)&tgt_id_vec[0],sizeof(int)*tgt_rule_len);
 		fout.write((char*)&tgt_nt_idx_to_src_nt_idx[0],sizeof(int)*tgt_nt_idx_to_src_nt_idx.size());
 		fout.write((char*)&prob_vec[0],sizeof(double)*prob_vec.size());
-        cout<<rule<<" ||| "<<trans_prob_t2s<<" "<<trans_prob_s2t<<" "<<lex_weight_t2s<<" "<<lex_weight_s2t<<endl;
+        //cout<<rule<<" ||| "<<trans_prob_t2s<<" "<<trans_prob_s2t<<" "<<lex_weight_t2s<<" "<<lex_weight_s2t<<endl;
     }
     cout<<num<<endl;
     fout.close();
