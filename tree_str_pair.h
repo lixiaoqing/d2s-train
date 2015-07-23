@@ -47,6 +47,7 @@ class TreeStrPair
 		void cal_lex_weight();
         bool check_subtree_align_consistent(SyntaxNode &node,int first_child_idx,int children_num);
 		void extract_head_rule(SyntaxNode &node);
+		void extract_syntactic_phrase(SyntaxNode &node);
 		void extract_fixed_rule(SyntaxNode &node,int first_child_idx,int children_num);
 		void extract_floating_rule(SyntaxNode &node,int first_child_idx,int children_num);
         void generalize_rule(SyntaxNode &node,int first_child_idx,int children_num,Span rule_span,string config,int tgt_span_num,string struct_type);

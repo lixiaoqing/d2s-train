@@ -300,6 +300,7 @@ void TreeStrPair::extract_rules(int sub_root_idx)
             extract_floating_rule(node,first_child_idx,children_num);
         }
     }
+    extract_syntactic_phrase(node);
 }
 
 void TreeStrPair::extract_head_rule(SyntaxNode &node)
@@ -325,7 +326,34 @@ void TreeStrPair::extract_head_rule(SyntaxNode &node)
 			lex_weight_forward *= lex_weight_s2t.at(i);
 		}
 		string tgt_nt_idx_to_src_nt_idx = "0";
-		node.rules[rule_src+" ||| "+rule_tgt+" ||| "+tgt_nt_idx_to_src_nt_idx] = {lex_weight_backward,lex_weight_forward,1.0/rule_spans.size()};
+		node.rules[rule_src+" ||| "+rule_tgt+"||| "+tgt_nt_idx_to_src_nt_idx] = {lex_weight_backward,lex_weight_forward,1.0/rule_spans.size()};
+	}
+}
+
+void TreeStrPair::extract_syntactic_phrase(SyntaxNode &node)
+{
+    if (node.src_span.second > 7 || node.subtree_align_consistent == false)
+        return;
+    string rule_src;
+	double lex_weight_backward = 1.0;
+    for (int i=node.src_span.first;i<=node.src_span.first+node.src_span.second;i++)
+    {
+        rule_src += src_nodes.at(i).word + " ";
+        lex_weight_backward *= lex_weight_t2s.at(i);
+    }
+
+	vector<Span> rule_spans = expand_tgt_span(src_span_to_tgt_span[node.src_span.first][node.src_span.second],make_pair(0,tgt_sen_len-1));
+	for (auto rule_span : rule_spans)
+	{
+		string rule_tgt;
+		double lex_weight_forward = 1.0;
+		for (int i=rule_span.first; i<=rule_span.first+rule_span.second; i++)
+		{
+			rule_tgt += tgt_words.at(i) + " ";
+			lex_weight_forward *= lex_weight_s2t.at(i);
+		}
+		string tgt_nt_idx_to_src_nt_idx = "0";
+		node.rules[rule_src+"||| "+rule_tgt+"||| "+tgt_nt_idx_to_src_nt_idx] = {lex_weight_backward,lex_weight_forward,1.0/rule_spans.size()};
 	}
 }
 
