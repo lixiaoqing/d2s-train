@@ -296,17 +296,8 @@ void TreeStrPair::extract_rules(int sub_root_idx)
     {
         for (int first_child_idx=0;first_child_idx<=children_size-children_num;first_child_idx++)
         {
-            if (check_subtree_align_consistent(node,first_child_idx,children_num) == true)
-            {
-                if (node.lex_align_consistent == true)
-                {
-                    extract_fixed_rule(node,first_child_idx,children_num);
-                }
-                if (children_num > 1)
-                {
-                    extract_floating_rule(node,first_child_idx,children_num);
-                }
-            }
+            extract_fixed_rule(node,first_child_idx,children_num);
+            extract_floating_rule(node,first_child_idx,children_num);
         }
     }
 }
@@ -388,6 +379,8 @@ void TreeStrPair::extract_fixed_rule(SyntaxNode &node,int first_child_idx,int ch
 ************************************************************************************* */
 void TreeStrPair::extract_floating_rule(SyntaxNode &node,int first_child_idx,int children_num)
 {
+    if (children_num == 1)
+        return;
 	auto &first_child = src_nodes.at(node.children.at(first_child_idx));
 	auto &last_child = src_nodes.at(node.children.at(first_child_idx+children_num-1));
     //规则源端必须连续
@@ -424,6 +417,8 @@ void TreeStrPair::generalize_rule(SyntaxNode &node,int first_child_idx,int child
 		{
 			if (config[2] == 'g' && open_tags.find(child.tag) != open_tags.end() && child.tgt_span.first != -1 )  //对空的叶节点不泛化
 			{
+                if (child.subtree_align_consistent == false)
+                    return;
 				rule_src_str += "[x]"+child.tag+" ";
                 src_nt_str_vec.push_back("[x]"+child.tag);
 				nt_spans_vec.push_back(expand_tgt_span(child.tgt_span,rule_span) );
@@ -436,6 +431,8 @@ void TreeStrPair::generalize_rule(SyntaxNode &node,int first_child_idx,int child
 		}
 		else	                            										//内部节点
 		{
+            if (child.subtree_align_consistent == false)
+                return;
 			if (config[1] == 'g')
 			{
 				rule_src_str += "[x]"+child.tag+" ";
@@ -454,6 +451,8 @@ void TreeStrPair::generalize_rule(SyntaxNode &node,int first_child_idx,int child
         Span head_span = src_span_to_tgt_span[node.idx][0];
         if (config[0] == 'g' && head_span.first != -1)				//对空的中心词不泛化
         {
+            if (node.lex_align_consistent == false)
+                return;
             rule_src_str += "[x]"+node.tag+" ";
             src_nt_str_vec.push_back("[x]"+node.tag);
             nt_spans_vec.push_back(expand_tgt_span(head_span,rule_span) );
