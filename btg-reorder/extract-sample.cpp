@@ -2,10 +2,24 @@
 
 SampleExtractor::SampleExtractor(string &line_src, string &line_tgt, string &line_al)
 {
-    src_words = Split(line_src);
-    tgt_words = Split(line_tgt);
+	vector<string> wt_hidx_vec = Split(line_src);
+	src_sen_len = wt_hidx_vec.size();
+	src_nodes.resize(src_sen_len);
+	src_words.resize(src_sen_len);
+	build_tree_from_str(wt_hidx_vec);
+    cal_subtree_span_for_each_node(root_idx);
 
-	src_sen_len = src_words.size();
+    span2head.resize(src_sen_len);
+    for (int beg=0;beg<src_sen_len;beg++)
+    {
+        span2head.at(beg).resize(src_sen_len-beg,-2);
+    }
+    for (int beg=0;beg<src_sen_len;beg++)
+    {
+        fill_span2head_with_node(beg);
+    }
+
+    tgt_words = Split(line_tgt);
 	tgt_sen_len = tgt_words.size();
 
 	src_span_to_tgt_span.resize(src_sen_len);
@@ -22,6 +36,86 @@ SampleExtractor::SampleExtractor(string &line_src, string &line_tgt, string &lin
     
     load_alignment(line_al);
 	cal_proj_span();
+}
+
+/**************************************************************************************
+ 1. 函数功能: 将字符串解析成句法树
+ 2. 入口参数: 一句话的依存句法分析结果，每个单元包括（词，词性，中心词位置）三个元素
+ 3. 出口参数: 无
+ 4. 算法简介: 见注释
+************************************************************************************* */
+void SampleExtractor::build_tree_from_str(const vector<string> &wt_hidx_vec)
+{
+	for (int i=0;i<src_sen_len;i++)
+	{
+		const string &wt_hidx = wt_hidx_vec.at(i);
+		int sep = wt_hidx.rfind('_');
+		string wt = wt_hidx.substr(0,sep);
+		int hidx = stoi(wt_hidx.substr(sep+1));
+		sep = wt.rfind('_');
+		string word = wt.substr(0,sep);
+		string tag = wt.substr(sep+1);
+		src_nodes.at(i).word = word;
+		src_words.at(i) = word;
+		src_nodes.at(i).tag = tag;
+		src_nodes.at(i).idx = i;
+		if (hidx == -1)                                 //整个句子的中心词
+		{
+			root_idx = i;
+		}
+		else                                            //更新父节点的子节点位置向量，子节点位置保持了从左到右的顺序
+		{
+			src_nodes.at(hidx).children.push_back(i);
+		}
+	}
+}
+
+void SampleExtractor::cal_subtree_span_for_each_node(int sub_root_idx)
+{
+	auto &node = src_nodes.at(sub_root_idx);
+	if (node.children.empty() )                                           // 叶节点
+	{
+		node.src_span = make_pair(node.idx,0);
+		return;
+	}
+	for (int child_idx : node.children)
+	{
+		cal_subtree_span_for_each_node(child_idx);
+	}
+	auto &first_child = src_nodes.at(node.children.front());
+	auto &last_child = src_nodes.at(node.children.back());
+    //首先合并第一个和最后一个孩子的源端span，然后与当前节点的源端span合并
+	node.src_span = merge_span(merge_span(first_child.src_span,last_child.src_span),make_pair(node.idx,0));
+}
+
+void SampleExtractor::fill_span2head_with_node(int node_idx)
+{
+	SyntaxNode &node = src_nodes.at(node_idx);
+    int children_size = node.children.size();
+    for (int children_num=1;children_num<=children_size;children_num++)
+    {
+        for (int first_child_idx=0;first_child_idx<=children_size-children_num;first_child_idx++)
+        {
+            auto &first_child = src_nodes.at(node.children.at(first_child_idx));
+            auto &last_child = src_nodes.at(node.children.at(first_child_idx+children_num-1));
+            //fixed结构，规则源端必须连续
+            if (first_child.src_span.first-1 <= node.idx && last_child.src_span.first+last_child.src_span.second+1 >= node.idx)
+            {
+                //首先合并第一个和最后一个孩子的源端span，然后与当前节点的源端span合并
+                Span fixed_span = merge_span(merge_span(first_child.src_span,last_child.src_span),make_pair(node.idx,0));
+                span2head.at(fixed_span.first).at(fixed_span.second) = node.idx;                    //记录当前span对应的中心词在句子中的位置
+            }
+            if (children_num > 1)
+            {
+                //floating结构，规则源端必须连续
+                if (first_child.idx > node.idx || last_child.idx < node.idx)
+                {
+                    Span floating_span = merge_span(first_child.src_span,last_child.src_span);
+                    span2head.at(floating_span.first).at(floating_span.second) = -1;                //将floating结构的中心词位置记为-1
+                }
+            }
+        }
+    }
 }
 
 /**************************************************************************************
@@ -188,6 +282,8 @@ void SampleExtractor::fill_alignpoint2quadrules()
 	{
         for (int src_len=0;src_beg+src_len<src_sen_len;src_len++)
 		{
+            if (src_len > 0 && span2head.at(src_beg).at(src_len) == -2)               //单节点视为well-formed结构
+                continue;
             int src_end = src_beg + src_len;
             Span src_span = make_pair(src_beg,src_len);
 			Span tgt_span = src_span_to_tgt_span[src_beg][src_len];

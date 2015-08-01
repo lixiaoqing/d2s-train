@@ -2,6 +2,21 @@
 #include "myutils.h"
 
 typedef pair<int,int> Span;			//由起始位置和span长度表示（span长度为实际长度减1）
+// 源端句法树节点
+struct SyntaxNode
+{
+	string word;                                    // 该节点的词
+	string tag;                                     // 该节点的词性
+	int idx;										// 该节点在句子中的位置
+	vector<int> children;							// 该节点的孩子节点在句子中的位置
+	Span src_span;                         			// 该节点对应的源端span,用起始位置和跨度长度表示
+	
+	SyntaxNode ()
+	{
+		idx = -1;
+		src_span = make_pair(-1,-1);
+	}
+};
 
 struct Rule
 {
@@ -24,6 +39,9 @@ class SampleExtractor
         void extract(vector<string> &samples);
 
     private:
+        void build_tree_from_str(const vector<string> &wt_hidx_vec);
+        void cal_subtree_span_for_each_node(int sub_root_idx);
+        void fill_span2head_with_node(int node_idx);
 		void load_alignment(string &align_line);
 		void cal_proj_span();
 		Span merge_span(Span span1,Span span2);
@@ -36,6 +54,9 @@ class SampleExtractor
     private:
 		vector<vector<Span> > src_span_to_tgt_span;						//记录每个源端span投射到目标端的span，span用起始位置和跨度长度来表示
 		vector<vector<Span> > tgt_span_to_src_span;						//记录每个目标端span投射到源的span
+		int root_idx;
+		vector<SyntaxNode> src_nodes;
+        vector<vector<int> > span2head;                 //如果该span对应fixed结构，则记录中心词的位置，如果对应floating结构，则为-1，否则为-2
 		vector<string> src_words;
 		vector<string> tgt_words;
 		int src_sen_len;
